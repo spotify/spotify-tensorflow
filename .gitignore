@@ -1,0 +1,10 @@
+*.egg-info
+.eggs/
+dist/
+build/
+.idea/
+*.pyc
+.tox/
+py27/
+target/
+*coverage*
