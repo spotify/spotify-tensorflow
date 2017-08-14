@@ -21,6 +21,7 @@ from tensorflow.contrib.data import TFRecordDataset
 
 import tensorflow as tf
 
+
 class Datasets(object):
 
     @staticmethod
@@ -31,8 +32,9 @@ class Datasets(object):
                 for l in f.readlines():
                     features[l.strip()] = tf.FixedLenFeature((), tf.float32)
             return features
-    
+
         feature_spec = get_features(features_filepath)
+
         def _parse_function(example_proto):
             parsed_features = tf.parse_single_example(example_proto, feature_spec)
             r = tuple(parsed_features.pop(i) for i in gen_spec)
@@ -57,4 +59,3 @@ class Datasets(object):
         dataset = TFRecordDataset(filenames)
         dataset = dataset.map(Datasets.get_parse_proto_function(feature_info_filepath, gen_spec))
         return filenames, dataset
-
