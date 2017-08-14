@@ -29,7 +29,7 @@ class Datasets(object):
             features = {}
             with file_io.FileIO(fpath, 'r') as f:
                 for l in f.readlines():
-                    features[l.strip()] = tf.FixedLenFeature((), tf.float32, default_value=0.0)
+                    features[l.strip()] = tf.FixedLenFeature((), tf.float32)
             return features
     
         feature_spec = get_features(features_filepath)
