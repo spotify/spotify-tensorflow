@@ -24,7 +24,7 @@ import tensorflow as tf
 class Datasets(object):
 
     @staticmethod
-    def _get_parse_proto_function(features_filepath, gen_spec):
+    def get_parse_proto_function(features_filepath, gen_spec):
         def get_features(fpath):
             features = {}
             with file_io.FileIO(fpath, 'r') as f:
@@ -55,6 +55,6 @@ class Datasets(object):
         """
         filenames = tf.placeholder(tf.string, shape=[None])
         dataset = TFRecordDataset(filenames)
-        dataset = dataset.map(Datasets._get_parse_proto_function(feature_info_filepath, gen_spec))
+        dataset = dataset.map(Datasets.get_parse_proto_function(feature_info_filepath, gen_spec))
         return filenames, dataset
 
