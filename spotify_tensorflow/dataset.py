@@ -15,7 +15,8 @@
 #  specific language governing permissions and limitations
 #  under the License.
 
-from tensorflow import gfile
+
+from tensorflow.python.lib.io import file_io
 from tensorflow.contrib.data import TFRecordDataset
 
 import tensorflow as tf
@@ -26,7 +27,7 @@ class Datasets(object):
   def _get_parse_proto_function(features_filepath, gen_spec):
     def get_features(fpath):
       features = {}
-      with gfile.FastGFile(fpath) as f:
+      with file_io.FileIO(fpath, 'r') as f:
         for l in f.readlines():
           features[l.strip()] = tf.FixedLenFeature((), tf.float32, default_value=0.0)
       return features
