@@ -15,12 +15,12 @@
 #  KIND, either express or implied.  See the License for the
 #  specific language governing permissions and limitations
 #  under the License.
- 
 
 from setuptools import setup
 
 
 setup(
-    setup_requires=['pbr>=1.3'],
+    setup_requires=['pbr>=1.3',
+                    'nose>=1.3.7'],
     pbr=True
 )
