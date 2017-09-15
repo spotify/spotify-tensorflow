@@ -44,9 +44,9 @@ class DataUtil(object):
     @staticmethod
     def get_example_proto(values=[{'f1': 1., 'f2': 2.}]):
         return [example_pb2.Example(features=feature_pb2.Features(feature={
-            k: feature_pb2.Feature(float_list=feature_pb2.FloatList(value=[v]))
-                for k, v in d.items()
-            })) for d in values]
+                    k: feature_pb2.Feature(float_list=feature_pb2.FloatList(value=[v]))
+                    for k, v in d.items()
+                })) for d in values]
 
 
 class SquareTest(tf.test.TestCase):
@@ -59,6 +59,6 @@ class SquareTest(tf.test.TestCase):
             iterator = dataset.make_one_shot_iterator()
             _, r = iterator.get_next()
             r = tf.reshape(r, [-1, 2])
-            self.assertAllEqual([[ 1., 2.]], r.eval())
+            self.assertAllEqual([[1., 2.]], r.eval())
             with self.assertRaises(tf.errors.OutOfRangeError):
                 r.eval()
