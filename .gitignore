@@ -8,3 +8,4 @@ build/
 py27/
 target/
 *coverage*
+*.swp
