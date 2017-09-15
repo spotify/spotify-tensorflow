@@ -72,7 +72,7 @@ class Datasets(object):
                                     num_threads_per_file=1,
                                     out_buffer_len=100000,
                                     block_length=10,
-                                    gen_spec=None):
+                                    gen_spec=[]):
         """
         Get Dataset of parsed Example protos.
 
