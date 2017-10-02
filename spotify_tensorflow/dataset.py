@@ -63,7 +63,8 @@ class Datasets(object):
             parsed_features = tf.parse_single_example(example_proto, feature_spec)
             r = tuple(parsed_features.pop(i) for i in gen_spec)
             return r, tuple(parsed_features.values())
-        return len(feature_spec), _parse_function
+        features_len = len(feature_spec) - len(gen_spec)
+        return features_len, _parse_function
 
     @staticmethod
     def get_featran_example_dataset(dir_path,
