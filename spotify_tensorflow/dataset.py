@@ -72,7 +72,8 @@ class Datasets(object):
                                     num_threads_per_file=1,
                                     out_buffer_len=100000,
                                     block_length=10,
-                                    gen_spec=[]):
+                                    gen_spec=[],
+                                    compression_type=None):
         """
         Get Dataset of parsed Example protos.
 
@@ -80,6 +81,9 @@ class Datasets(object):
         :type dir_path: String
         :param feature_desc_path: filepath to feature description file
         :type feature_desc_path: String
+        :param compression_type: A `tf.string` scalar evaluating to one of `""` (no compression)
+                                 `"ZLIB"`, or `"GZIP"`
+        :type compression_type: tf.string
 
         :return: dataset, dict
 
@@ -104,9 +108,9 @@ class Datasets(object):
         filenames = tf.placeholder_with_default(input_files, shape=[None])
         num_features, parse_fn = Datasets.get_parse_proto_function(feature_desc_path, gen_spec)
         dataset = (Dataset.from_tensor_slices(filenames)
-                   .interleave(
-                       lambda x: TFRecordDataset(x).map(parse_fn,
-                                                        num_threads=num_threads_per_file,
-                                                        output_buffer_size=out_buffer_len),
-                       cycle_length=num_threads, block_length=block_length))
+                   .interleave(lambda x: TFRecordDataset(x, compression_type)
+                               .map(parse_fn,
+                                    num_threads=num_threads_per_file,
+                                    output_buffer_size=out_buffer_len),
+                               cycle_length=num_threads, block_length=block_length))
         return dataset, DatasetContext(filenames_placeholder=filenames, num_features=num_features)
