@@ -15,7 +15,7 @@ jobs:
           - v1-dependencies-
 
       - run:
-          name: install dependencies
+          name: Install Dependencies
           command: |
             python3 -m venv venv
             . venv/bin/activate
@@ -28,7 +28,7 @@ jobs:
           key: v1-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "test-requirements.txt" }}
         
       - run:
-          name: run tests
+          name: Run Tests
           command: |
             . venv/bin/activate
             nosetests tests
@@ -38,6 +38,6 @@ jobs:
           destination: coverage
 
       - run:
-          name: upload coverage
+          name: Upload Coverage
           command: |
             codecov
