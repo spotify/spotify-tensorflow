@@ -84,3 +84,9 @@ jobs:
           command: |
             . venv/bin/activate
             codecov
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - test-python3
+      - test-python2
