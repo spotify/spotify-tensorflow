@@ -23,14 +23,16 @@ import multiprocessing as mp
 import tensorflow as tf
 
 from collections import namedtuple
-DatasetContext = namedtuple('DatasetContext', ['filenames_placeholder', 'num_features'])
+DatasetContext = namedtuple('DatasetContext', ['filenames_placeholder',
+                                               'feature_names',
+                                               'num_features'])
 
 
 class Datasets(object):
     _default_feature_desc_filename = '_feature_desc'
 
     @staticmethod
-    def get_parse_proto_function(feature_desc_path, gen_spec):
+    def get_parse_proto_function(feature_desc_path):
         """
         Get a function to parse Example proto using given features description.
         Parse function takes a single argument a proto object.
@@ -48,7 +50,6 @@ class Datasets(object):
             "dir_path is not a String: %r" % feature_desc_path
         assert file_io.file_exists(feature_desc_path), \
             "feature desc `%s` does not exist" % feature_desc_path
-        assert isinstance(gen_spec, list), "gen_spec has to be a list: %r" % gen_spec
 
         def get_features(fpath):
             features = {}
@@ -60,11 +61,9 @@ class Datasets(object):
         feature_spec = get_features(feature_desc_path)
 
         def _parse_function(example_proto):
-            parsed_features = tf.parse_single_example(example_proto, feature_spec)
-            r = tuple(parsed_features.pop(i) for i in gen_spec)
-            return r, tuple(parsed_features.values())
-        features_len = len(feature_spec) - len(gen_spec)
-        return features_len, _parse_function
+            return tf.parse_single_example(example_proto, feature_spec)
+
+        return feature_spec.keys(), _parse_function
 
     @staticmethod
     def get_featran_example_dataset(dir_path,
@@ -72,7 +71,6 @@ class Datasets(object):
                                     num_threads=mp.cpu_count(),
                                     num_threads_per_file=1,
                                     block_length=10,
-                                    gen_spec=[],
                                     compression_type=None):
         """
         Get Dataset of parsed Example protos.
@@ -106,11 +104,14 @@ class Datasets(object):
         if feature_desc_path is None:
             feature_desc_path = pjoin(dir_path, Datasets._default_feature_desc_filename)
         filenames = tf.placeholder_with_default(input_files, shape=[None])
-        num_features, parse_fn = Datasets.get_parse_proto_function(feature_desc_path, gen_spec)
-        dataset = (Dataset.from_tensor_slices(filenames)
-                   .interleave(lambda x: TFRecordDataset(x, compression_type)
-                               .map(parse_fn,
-                                    num_threads=num_threads_per_file,
-                                    output_buffer_size=out_buffer_len),
-                               cycle_length=num_threads, block_length=block_length))
-        return dataset, DatasetContext(filenames_placeholder=filenames, num_features=num_features)
+        feature_names, parse_fn = Datasets.get_parse_proto_function(feature_desc_path)
+
+        dataset = Dataset.from_tensor_slices(filenames)\
+            .interleave(lambda x: TFRecordDataset(x, compression_type)
+                        .map(parse_fn, num_parallel_calls=num_threads_per_file),
+                        cycle_length=num_threads,
+                        block_length=block_length)
+
+        return dataset, DatasetContext(filenames_placeholder=filenames,
+                                       num_features=len(feature_names),
+                                       feature_names=feature_names)
