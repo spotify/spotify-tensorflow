@@ -16,8 +16,8 @@
 #  under the License.
 
 from tensorflow.python.lib.io import file_io
-from tensorflow.contrib.data import Dataset
-from tensorflow.contrib.data import TFRecordDataset
+from tensorflow.python.data.ops.dataset_ops import Dataset
+from tensorflow.python.data.ops.readers import TFRecordDataset
 
 import multiprocessing as mp
 import tensorflow as tf
@@ -71,7 +71,6 @@ class Datasets(object):
                                     feature_desc_path=None,
                                     num_threads=mp.cpu_count(),
                                     num_threads_per_file=1,
-                                    out_buffer_len=100000,
                                     block_length=10,
                                     gen_spec=[],
                                     compression_type=None):
