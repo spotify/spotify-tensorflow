@@ -17,7 +17,7 @@
 
 import tensorflow as tf
 
-from spotify_tensorflow.dataset import mk_dataset_training, mk_dataset_eval
+from .dataset import mk_dataset_training, mk_dataset_eval
 
 FLAGS = tf.flags.FLAGS
 

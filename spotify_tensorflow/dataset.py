@@ -20,7 +20,7 @@ import os
 
 import tensorflow as tf
 
-from dataset_lib import Datasets
+from .dataset_lib import Datasets
 
 FLAGS = tf.flags.FLAGS
 

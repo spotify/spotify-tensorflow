@@ -16,9 +16,9 @@
 #  under the License.
 
 import tensorflow as tf
-from experiment import mk_experiment_fn
 
-from spotify_tensorflow.run_config import ConfigHelper
+from .experiment import mk_experiment_fn
+from .run_config import ConfigHelper
 
 FLAGS = tf.flags.FLAGS
 
