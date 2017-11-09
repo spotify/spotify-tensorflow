@@ -28,7 +28,7 @@ class DataUtil(object):
 
     @staticmethod
     def write_featran_test_data(feature_desc=['f1', 'f2'],
-                                values=[{'f1': 1., 'f2': 2.}],
+                                values=[{'f1': 1, 'f2': 2}],
                                 feature_desc_filename='_feature_desc'):
         tmp_dir = tf.test.get_temp_dir()
         feature_desc_file = pjoin(tmp_dir, feature_desc_filename)
@@ -42,9 +42,9 @@ class DataUtil(object):
         return tmp_dir, data_file, feature_desc_file
 
     @staticmethod
-    def get_example_proto(values=[{'f1': 1., 'f2': 2.}]):
+    def get_example_proto(values=[{'f1': 1, 'f2': 2}]):
         return [example_pb2.Example(features=feature_pb2.Features(feature={
-                    k: feature_pb2.Feature(float_list=feature_pb2.FloatList(value=[v]))
+                    k: feature_pb2.Feature(int64_list=feature_pb2.Int64List(value=[v]))
                     for k, v in d.items()
                 })) for d in values]
 
@@ -54,12 +54,11 @@ class SquareTest(tf.test.TestCase):
     def testGetFeatranExampleDataset(self):
         d, _, _ = DataUtil.write_featran_test_data()
         with self.test_session() as sess:
-            dataset, c = Datasets.get_featran_example_dataset(d)
-            self.assertEquals(list(c.feature_names), ['f1', 'f2'])
+            dataset, c = Datasets.get_featran_example_dataset(d, compression_type="")
             self.assertEquals(c.num_features, 2)
             iterator = dataset.make_one_shot_iterator()
             r = iterator.get_next()
             f1, f2 = r['f1'], r['f2']
-            self.assertAllEqual([1., 2.], sess.run([f1, f2]))
+            self.assertAllEqual([1, 2], sess.run([f1, f2]))
             with self.assertRaises(tf.errors.OutOfRangeError):
                 f1.eval()
