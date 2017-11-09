@@ -17,4 +17,4 @@
 #
 
 # make our internal flags are propagated into TF flags
-import flags  # noqa: F401
+from . import flags  # noqa: F401

@@ -31,6 +31,7 @@ flags.DEFINE_string("job-dir", None,
 
 # Dataset Flags
 
+# TODO: change DEFINE_strings to DEFINE_integer
 flags.DEFINE_string("batch_size", 128,
                     "Size of the batch of the dataset iterator.")
 
