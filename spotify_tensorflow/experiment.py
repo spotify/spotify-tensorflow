@@ -52,8 +52,10 @@ def mk_experiment_fn(estimator,
 
 def mk_iterator(dataset,
                 batch_size=FLAGS.batch_size,
-                buffer_size=FLAGS.buffer_size):
+                buffer_size=FLAGS.buffer_size,
+                take_count=FLAGS.take_count):
     dataset = dataset.shuffle(buffer_size)
     dataset = dataset.batch(batch_size)
+    dataset = dataset.take(take_count)
     iterator = dataset.make_one_shot_iterator()
     return iterator
