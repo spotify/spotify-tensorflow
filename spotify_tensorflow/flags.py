@@ -32,13 +32,13 @@ flags.DEFINE_string("job-dir", None,
 # Dataset Flags
 
 # TODO: change DEFINE_strings to DEFINE_integer
-flags.DEFINE_string("batch_size", 128,
+flags.DEFINE_integer("batch_size", 128,
                     "Size of the batch of the dataset iterator.")
 
-flags.DEFINE_string("buffer_size", 512,
+flags.DEFINE_integer("buffer_size", 512,
                     "Size of the buffer of the dataset iterator.")
 
-flags.DEFINE_string("take_count", -1,
+flags.DEFINE_integer("take_count", -1,
                     "Creates a `Dataset` with at most `count` elements from this dataset.")
 
 flags.DEFINE_string("train_subdir", "train",
