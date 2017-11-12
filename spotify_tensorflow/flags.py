@@ -35,7 +35,7 @@ flags.DEFINE_string("job-dir", None,
 flags.DEFINE_string("batch_size", 128,
                     "Size of the batch of the dataset iterator.")
 
-flags.DEFINE_string("buffer_size", 10000,
+flags.DEFINE_string("buffer_size", 512,
                     "Size of the buffer of the dataset iterator.")
 
 flags.DEFINE_string("train_subdir", "train",
