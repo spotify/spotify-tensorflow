@@ -21,11 +21,11 @@ from collections import namedtuple
 import tensorflow as tf
 from tensorflow.python.lib.io import file_io
 
-DatasetContext = namedtuple('DatasetContext', ['filenames_placeholder', 'num_features'])
+DatasetContext = namedtuple("DatasetContext", ["filenames_placeholder", "num_features"])
 
 
 class Datasets(object):
-    _default_feature_desc_filename = '_feature_desc'
+    _default_feature_desc_filename = "_feature_desc"
 
     @staticmethod
     def get_parse_proto_function(feature_desc_path):
@@ -49,7 +49,7 @@ class Datasets(object):
 
         def get_features(fpath):
             features = {}
-            with file_io.FileIO(fpath, 'r') as f:
+            with file_io.FileIO(fpath, "r") as f:
                 for l in f.readlines():
                     # abstract this away in Featran/* generator
                     features[l.strip()] = tf.FixedLenFeature((), tf.int64, default_value=0)
@@ -97,7 +97,7 @@ class Datasets(object):
 
         from os.path import join as pjoin
         flist = file_io.list_directory(dir_path)
-        input_files = [pjoin(dir_path, x) for x in filter(lambda x: not x.startswith('_'), flist)]
+        input_files = [pjoin(dir_path, x) for x in filter(lambda x: not x.startswith("_"), flist)]
         if feature_desc_path is None:
             feature_desc_path = pjoin(dir_path, Datasets._default_feature_desc_filename)
         filenames = tf.placeholder_with_default(input_files, shape=[None])

@@ -23,7 +23,7 @@ import luigi
 
 
 class ExternalDailySnapshot(luigi.ExternalTask):
-    ''' Abstract class containing a helper method to fetch the latest snapshot.
+    """Abstract class containing a helper method to fetch the latest snapshot.
 
     Use case:
     class MyTask(luigi.Task):
@@ -31,21 +31,19 @@ class ExternalDailySnapshot(luigi.ExternalTask):
             return PlaylistContent.latest()
 
     All tasks subclassing ExternalDailySnapshot must have a luigi.DateParameter
-    named 'date'.
+    named "date".
 
     You can also provide additional parameters to the class and also configure
-    lookback size. Example: ServiceLogs.latest(service='radio', lookback=21)
-    '''
+    lookback size. Example: ServiceLogs.latest(service="radio", lookback=21)
+    """
     date = luigi.DateParameter()
     __cache = []
 
     @classmethod
     def latest(cls, *args, **kwargs):
-        '''
-        This is cached so that requires() is deterministic.
-        '''
-        date = kwargs.pop('date', datetime.date.today())
-        lookback = kwargs.pop('lookback', 14)
+        """This is cached so that requires() is deterministic."""
+        date = kwargs.pop("date", datetime.date.today())
+        lookback = kwargs.pop("lookback", 14)
         # hashing kwargs deterministically would be hard. Let's just lookup by equality
         key = (cls, args, kwargs, lookback, date)
         for k, v in ExternalDailySnapshot.__cache:
@@ -65,6 +63,6 @@ class ExternalDailySnapshot(luigi.ExternalTask):
             t = cls(date=d, *args, **kwargs)
             if t.complete():
                 return t
-        logging.debug('Could not find last dump for %s (looked back %d days)',
+        logging.debug("Could not find last dump for %s (looked back %d days)",
                       cls.__name__, lookback)
         return t

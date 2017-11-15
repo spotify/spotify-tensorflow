@@ -29,15 +29,15 @@ class FeatranDatasetExample(object):
     def __parse_args():
         parser = argparse.ArgumentParser()
         parser.add_argument(
-            '--input',
+            "--input",
             type=str,
-            help='Input directory with Featran output',
+            help="Input directory with Featran output",
             required=True
         )
         parser.add_argument(
-            '--show-nbr',
+            "--show-nbr",
             type=int,
-            help='Number of records to show',
+            help="Number of records to show",
             default=2,
             required=True
         )
@@ -46,8 +46,8 @@ class FeatranDatasetExample(object):
 
     @staticmethod
     def get_input(args):
-        with tf.name_scope('input'):
-            dataset, c = Datasets.get_featran_example_dataset(args.input, gen_spec=['label'])
+        with tf.name_scope("input"):
+            dataset, c = Datasets.get_featran_example_dataset(args.input, gen_spec=["label"])
             iterator = dataset.make_initializable_iterator()
             (label,), features = iterator.get_next()
             label = tf.reshape(label, [-1, 1])
@@ -56,7 +56,7 @@ class FeatranDatasetExample(object):
 
     @staticmethod
     def eval(iterator, label, features, nbr):
-        with tf.name_scope('debug'):
+        with tf.name_scope("debug"):
             sess = tf.Session()
             init_op = tf.global_variables_initializer()
             sess.run(init_op)
@@ -67,11 +67,11 @@ class FeatranDatasetExample(object):
                     print("label:", _label)
                     print("features:", _features_)
 
-
     def main(self):
         args = FeatranDatasetExample.__parse_args()
         (iterator, label, features) = FeatranDatasetExample.get_input(args)
         FeatranDatasetExample.eval(iterator, label, features, args.show_nbr)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     FeatranDatasetExample().main()

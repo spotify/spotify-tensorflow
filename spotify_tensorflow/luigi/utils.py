@@ -18,7 +18,7 @@
 import re
 
 
-def to_snake_case(s, sep='_'):
-    p = r'\1' + sep + r'\2'
-    s1 = re.sub('(.)([A-Z][a-z]+)', p, s)
-    return re.sub('([a-z0-9])([A-Z])', p, s1).lower()
+def to_snake_case(s, sep="_"):
+    p = r"\1" + sep + r"\2"
+    s1 = re.sub("(.)([A-Z][a-z]+)", p, s)
+    return re.sub("([a-z0-9])([A-Z])", p, s1).lower()

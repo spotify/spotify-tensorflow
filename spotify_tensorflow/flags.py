@@ -33,13 +33,13 @@ flags.DEFINE_string("job-dir", None,
 
 # TODO: change DEFINE_strings to DEFINE_integer
 flags.DEFINE_integer("batch_size", 128,
-                    "Size of the batch of the dataset iterator.")
+                     "Size of the batch of the dataset iterator.")
 
 flags.DEFINE_integer("buffer_size", 512,
-                    "Size of the buffer of the dataset iterator.")
+                     "Size of the buffer of the dataset iterator.")
 
 flags.DEFINE_integer("take_count", -1,
-                    "Creates a `Dataset` with at most `count` elements from this dataset.")
+                     "Creates a `Dataset` with at most `count` elements from this dataset.")
 
 flags.DEFINE_string("train_subdir", "train",
                     "Location of training TFRecords, with the training set dir.")

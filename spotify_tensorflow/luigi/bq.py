@@ -36,4 +36,4 @@ class BigQueryDailySnapshot(ExternalDailySnapshot):
 
 def table_str(bq_target):
     t = bq_target.table
-    return '%s.%s.%s' % (t.project_id, t.dataset_id, t.table_id)
+    return "%s.%s.%s" % (t.project_id, t.dataset_id, t.table_id)

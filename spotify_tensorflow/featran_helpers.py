@@ -25,9 +25,9 @@ FLAGS = tf.flags.FLAGS
 
 def get_feature_columns(dataset=FLAGS.training_set,
                         label="target",
-                        feature_desc_filename='_feature_desc'):
+                        feature_desc_filename="_feature_desc"):
     p = os.path.join(dataset, feature_desc_filename)
-    with file_io.FileIO(p, 'r') as f:
+    with file_io.FileIO(p, "r") as f:
         return [tf.feature_column.numeric_column(l.strip())
                 for l in f.readlines()
                 if l.strip() != label]

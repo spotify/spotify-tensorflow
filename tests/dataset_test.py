@@ -27,22 +27,22 @@ from tensorflow.core.example import feature_pb2
 class DataUtil(object):
 
     @staticmethod
-    def write_featran_test_data(feature_desc=['f1', 'f2'],
-                                values=[{'f1': 1, 'f2': 2}],
-                                feature_desc_filename='_feature_desc'):
+    def write_featran_test_data(feature_desc=["f1", "f2"],
+                                values=[{"f1": 1, "f2": 2}],
+                                feature_desc_filename="_feature_desc"):
         tmp_dir = tf.test.get_temp_dir()
         feature_desc_file = pjoin(tmp_dir, feature_desc_filename)
-        with open(feature_desc_file, 'w') as f:
-            f.writelines('\n'.join(feature_desc))
+        with open(feature_desc_file, "w") as f:
+            f.writelines("\n".join(feature_desc))
         e = DataUtil.get_example_proto(values)
-        data_file = pjoin(tmp_dir, 'test.tfrecord')
+        data_file = pjoin(tmp_dir, "test.tfrecord")
         with TFRecordWriter(data_file) as f:
             for i in e:
                 f.write(i.SerializeToString())
         return tmp_dir, data_file, feature_desc_file
 
     @staticmethod
-    def get_example_proto(values=[{'f1': 1, 'f2': 2}]):
+    def get_example_proto(values=[{"f1": 1, "f2": 2}]):
         return [example_pb2.Example(features=feature_pb2.Features(feature={
                     k: feature_pb2.Feature(int64_list=feature_pb2.Int64List(value=[v]))
                     for k, v in d.items()
@@ -58,7 +58,7 @@ class SquareTest(tf.test.TestCase):
             self.assertEquals(c.num_features, 2)
             iterator = dataset.make_one_shot_iterator()
             r = iterator.get_next()
-            f1, f2 = r['f1'], r['f2']
+            f1, f2 = r["f1"], r["f2"]
             self.assertAllEqual([1, 2], sess.run([f1, f2]))
             with self.assertRaises(tf.errors.OutOfRangeError):
                 f1.eval()

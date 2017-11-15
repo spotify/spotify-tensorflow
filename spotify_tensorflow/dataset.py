@@ -26,14 +26,14 @@ FLAGS = tf.flags.FLAGS
 
 
 def mk_dataset_training(training_set):
-    with tf.name_scope('traininginput'):
+    with tf.name_scope("traininginput"):
         train_dataset, _ = Datasets.get_featran_example_dataset(os.path.join(training_set,
                                                                              FLAGS.train_subdir))
         return train_dataset
 
 
 def mk_dataset_eval(training_set):
-    with tf.name_scope('evalinput'):
+    with tf.name_scope("evalinput"):
         eval_dataset, _ = Datasets.get_featran_example_dataset(os.path.join(training_set,
                                                                             FLAGS.eval_subdir))
         return eval_dataset
