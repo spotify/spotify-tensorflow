@@ -30,8 +30,8 @@ from luigi.contrib.gcs import GCSTarget
 logger = logging.getLogger("luigi-interface")
 
 
-class TensorflowTask(luigi.Task):
-    """Luigi wrapper for a Tensorflow task. To use, extend this class and provide values for the
+class TensorFlowTask(luigi.Task):
+    """Luigi wrapper for a TensorFlow task. To use, extend this class and provide values for the
     following properties:
 
     model_package = None        The name of the python package containing your model.
@@ -66,7 +66,7 @@ class TensorflowTask(luigi.Task):
     tf_debug = luigi.BoolParameter(default=False, description="Run tf on debug mode")
 
     def __init__(self, *args, **kwargs):
-        super(TensorflowTask, self).__init__(*args, **kwargs)
+        super(TensorFlowTask, self).__init__(*args, **kwargs)
         self._job_name = None
 
     def tf_task_args(self):
