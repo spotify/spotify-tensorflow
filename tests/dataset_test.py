@@ -15,6 +15,8 @@
 #  specific language governing permissions and limitations
 #  under the License.
 
+from __future__ import division, print_function, absolute_import
+
 from os.path import join as pjoin
 from spotify_tensorflow.dataset import Datasets
 import tensorflow as tf

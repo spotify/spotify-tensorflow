@@ -16,6 +16,8 @@
 # under the License.
 #
 
+from __future__ import division, print_function, absolute_import
+
 import luigi
 from luigi.contrib.bigquery import BigqueryTarget
 
