@@ -20,7 +20,7 @@ from setuptools import setup
 
 
 setup(
-    setup_requires=['pbr>=1.3',
-                    'nose>=1.3.7'],
+    setup_requires=["pbr>=1.3",
+                    "nose>=1.3.7"],
     pbr=True
 )

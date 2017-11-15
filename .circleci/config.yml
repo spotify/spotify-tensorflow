@@ -37,7 +37,7 @@ jobs:
           name: Check style
           command: |
             . venv/bin/activate
-            flake8 spotify_tensorflow examples tests
+            flake8
 
       - store_artifacts:
           path: coverage
@@ -85,7 +85,7 @@ jobs:
           name: Check style
           command: |
             . venv/bin/activate
-            flake8 spotify_tensorflow examples tests
+            flake8
 
       - store_artifacts:
           path: coverage
