@@ -28,8 +28,6 @@ def mk_experiment_fn(estimator,
                      training_set,
                      split_features_label):
     """
-    :param training_set:
-    :param split_features_label:
     :return: tf.contrib.learn.Experiment https://www.tensorflow.org/api_docs/python/tf/contrib/learn/Experiment  # noqa: E501
     """
 

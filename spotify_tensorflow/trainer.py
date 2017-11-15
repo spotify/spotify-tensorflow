@@ -27,15 +27,12 @@ FLAGS = tf.flags.FLAGS
 
 def split_features_label_fn(parsed_features):
     target = parsed_features.pop("target")
-    return (parsed_features, target)
+    return parsed_features, target
 
 
 def run(estimator,
         training_set=FLAGS.training_set,
         split_features_label_fn=split_features_label_fn):
-    """
-    :return:
-    """
     tf.contrib.learn.learn_runner.run(experiment_fn=mk_experiment_fn(estimator,
                                                                      training_set,
                                                                      split_features_label_fn),
