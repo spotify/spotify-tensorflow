@@ -21,7 +21,7 @@ import logging
 
 import tensorflow as tf
 
-from .experiment import _ExperimentDummyImpl
+from .dataset import Datasets
 
 FLAGS = tf.flags.FLAGS
 
@@ -54,11 +54,35 @@ class Trainer(object):
                                     eval_data_dir,
                                     feature_mapping_fn,
                                     split_features_label_fn):
-        return _ExperimentDummyImpl(estimator,
-                                    training_data_dir,
-                                    eval_data_dir,
-                                    feature_mapping_fn,
-                                    split_features_label_fn)
+        def in_fn():
+            train_input_dataset = Datasets.mk_dataset_training(training_data_dir,
+                                                               feature_mapping_fn)
+            train_input_it = mk_iterator(train_input_dataset)
+            return split_features_label_fn(train_input_it.get_next())
+
+        def eval_fn():
+            eval_input_dataset = Datasets.mk_dataset_eval(eval_data_dir, feature_mapping_fn)
+            eval_input_it = mk_iterator(eval_input_dataset)
+            return split_features_label_fn(eval_input_it.get_next())
+
+        def mk_iterator(dataset,
+                        batch_size=FLAGS.batch_size,
+                        buffer_size=FLAGS.buffer_size,
+                        take_count=FLAGS.take_count):
+            dataset = dataset.shuffle(buffer_size)
+            dataset = dataset.batch(batch_size)
+            dataset = dataset.take(take_count)
+            # TODO(rav): evaluate the use of initializable iterator for more epochs?
+            iterator = dataset.make_one_shot_iterator()
+            return iterator
+
+        def do_make_experiment(run_config, params):
+            return tf.contrib.learn.Experiment(
+                estimator=estimator,
+                train_input_fn=in_fn,
+                eval_input_fn=eval_fn)
+
+        return do_make_experiment
 
     @staticmethod
     def run(estimator,
@@ -81,7 +105,7 @@ class Trainer(object):
                 tf.FixedLenFeature((), tf.int64, default_value=0).
             split_features_label_fn: Function used split features into examples and labels.
             run_config: `RunConfig` for the `Estimator`. Default value is based on `Flags`.
-            experiment_fn: `Experiment` holding experiment specification. Default value is based on
+            experiment_fn: Function which returns an `Experiment`. Default value is based on
                 `Flags` and is implementation specific.
         """
 
