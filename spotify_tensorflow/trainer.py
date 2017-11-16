@@ -17,6 +17,8 @@
 
 from __future__ import absolute_import, division, print_function
 
+import logging
+
 import tensorflow as tf
 
 from .experiment import mk_experiment_fn
@@ -25,15 +27,47 @@ from .run_config import ConfigHelper
 FLAGS = tf.flags.FLAGS
 
 
-def split_features_label_fn(parsed_features):
-    target = parsed_features.pop("target")
-    return parsed_features, target
+class Trainer(object):
+    """Entry point to train/evaluate estimators."""
 
+    @staticmethod
+    def __split_features_label_fn(parsed_features):
+        target = parsed_features.pop("target")
+        return parsed_features, target
 
-def run(estimator,
-        training_set=FLAGS.training_set,
-        split_features_label_fn=split_features_label_fn):
-    tf.contrib.learn.learn_runner.run(experiment_fn=mk_experiment_fn(estimator,
-                                                                     training_set,
-                                                                     split_features_label_fn),
-                                      run_config=ConfigHelper.run_config())
+    @staticmethod
+    def __get_default_training_data_dir():
+        from os.path import join as pjoin
+        return pjoin(FLAGS.training_set, FLAGS.train_subdir)
+
+    @staticmethod
+    def __get_default_eval_data_dir():
+        from os.path import join as pjoin
+        return pjoin(FLAGS.training_set, FLAGS.eval_subdir)
+
+    @staticmethod
+    def run(estimator,
+            training_data_dir=None,
+            eval_data_dir=None,
+            split_features_label_fn=None):
+        """Make and run an experiment based on given estimator.
+
+        Args:
+            estimator: Your estimator to train on. See official TensorFlow documentation on how to
+                define your own estimator.
+            training_data_dir: Directory containing training data.
+            eval_data_dir: Directory containing training data.
+            split_features_label_fn: Function used split features into examples and labels.
+        """
+
+        training_data_dir = training_data_dir or Trainer.__get_default_training_data_dir()
+        eval_data_dir = eval_data_dir or Trainer.__get_default_eval_data_dir()
+
+        logging.info("Training data directory: `%s`", training_data_dir)
+        logging.info("Evaluation data directory: `%s`", eval_data_dir)
+
+        tf.contrib.learn.learn_runner.run(experiment_fn=mk_experiment_fn(estimator,
+                                                                         training_data_dir,
+                                                                         eval_data_dir,
+                                                                         split_features_label_fn),
+                                          run_config=ConfigHelper.run_config())
