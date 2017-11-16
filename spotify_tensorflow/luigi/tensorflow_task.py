@@ -74,6 +74,7 @@ class TensorFlowTask(luigi.Task):
         return []
 
     def run(self):
+        self._mk_job_name()
         cmd = self._mk_cmd()
         logger.info("Running:\n```\n%s\n```", cmd)
         ret = subprocess.call(cmd, shell=True)
