@@ -17,33 +17,47 @@
 
 from __future__ import absolute_import, division, print_function
 
+import logging
+
 import tensorflow as tf
 
 flags = tf.flags
 
-"""
-spotify_tensorflow flags
-"""
 
-flags.DEFINE_string("training_set", None,
-                    "Location of the training set")
+class Flags(object):
+    """spotify_tensorflow flags"""
 
-flags.DEFINE_string("job-dir", None,
-                    "Where to write data")
+    @staticmethod
+    def register_dataset_flags():
+        logging.info("Registering Dataset flags")
+        flags.DEFINE_integer("batch_size", 128,
+                             "Size of the batch of the dataset iterator.")
 
-# Dataset Flags
+        flags.DEFINE_integer("buffer_size", 512,
+                             "Size of the buffer of the dataset iterator.")
 
-flags.DEFINE_integer("batch_size", 128,
-                     "Size of the batch of the dataset iterator.")
+        flags.DEFINE_integer("take_count", -1,
+                             "Creates a `Dataset` with at most `count` elements from this dataset.")
 
-flags.DEFINE_integer("buffer_size", 512,
-                     "Size of the buffer of the dataset iterator.")
+        flags.DEFINE_string("train_subdir", "train",
+                            "Location of training TFRecords, with the training set dir.")
 
-flags.DEFINE_integer("take_count", -1,
-                     "Creates a `Dataset` with at most `count` elements from this dataset.")
+        flags.DEFINE_string("eval_subdir", "eval",
+                            "Location of eval TFRecords, with the training set dir.")
 
-flags.DEFINE_string("train_subdir", "train",
-                    "Location of training TFRecords, with the training set dir.")
+    @staticmethod
+    def register_core_flags():
+        logging.info("Registering core spotify-tensorflow flags")
+        flags.DEFINE_string("training_set", None,
+                            "Location of the training set")
 
-flags.DEFINE_string("eval_subdir", "eval",
-                    "Location of eval TFRecords, with the training set dir.")
+        flags.DEFINE_string("job-dir", None,
+                            "Where to write data")
+
+    @staticmethod
+    def register_flags():
+        Flags.register_core_flags()
+        Flags.register_dataset_flags()
+
+
+Flags.register_flags()
