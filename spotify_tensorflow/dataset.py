@@ -115,22 +115,28 @@ class Datasets(object):
 
         from os.path import join as pjoin
         flist = file_io.list_directory(dir_path)
-        input_files = [pjoin(dir_path, x) for x in filter(lambda x: not x.startswith("_"), flist)]
-        if feature_desc_path is None:
-            feature_desc_path = pjoin(dir_path, Datasets._default_feature_desc_filename)
+        input_files = [pjoin(dir_path, x) for x in filter(lambda f: not f.startswith("_"), flist)]
+        feature_desc_path = feature_desc_path or Datasets.__get_default_feature_desc_path(dir_path)
         filenames = tf.placeholder_with_default(input_files, shape=[None])
         feature_mapping_fn = feature_mapping_fn or Datasets.__get_default_feature_mapping_fn()
         num_features, parse_fn = Datasets.get_parse_proto_function(feature_desc_path,
                                                                    feature_mapping_fn)
-        dataset = (tf.data.Dataset.from_tensor_slices(filenames)
-                   .interleave(lambda x: tf.data.TFRecordDataset(x, compression_type)
-                               .map(parse_fn, num_parallel_calls=num_threads_per_file),
-                               cycle_length=num_threads, block_length=block_length))
+        dataset = tf.data.Dataset.from_tensor_slices(filenames)
+        # TODO(rav): does `map` need to be inside `interleave`, what are the performance diff?
+        dataset = dataset.interleave(lambda f: tf.data.TFRecordDataset(f, compression_type),
+                                     cycle_length=num_threads,
+                                     block_length=block_length)
+        dataset = dataset.map(parse_fn, num_parallel_calls=num_threads_per_file)
         return dataset, DatasetContext(filenames_placeholder=filenames, num_features=num_features)
 
     @staticmethod
     def __get_default_feature_mapping_fn():
         return lambda l: tf.FixedLenFeature((), tf.int64, default_value=0)
+
+    @staticmethod
+    def __get_default_feature_desc_path(dir_path):
+        from os.path import join as pjoin
+        return pjoin(dir_path, Datasets._default_feature_desc_filename)
 
     @staticmethod
     def mk_dataset_training(training_data_dir, feature_mapping_fn):
