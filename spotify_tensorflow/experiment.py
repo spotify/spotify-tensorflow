@@ -27,6 +27,11 @@ FLAGS = tf.flags.FLAGS
 
 
 class Experiment(object):
+    """Interface holding `Experiment` definition
+
+    Usually you don't need this, and can just use the default values. Otherwise, you can implement
+    your own definition of `Experiment` which you can pass into `Trainer`.
+    """
     __metaclass__ = ABCMeta
 
     @abstractmethod
