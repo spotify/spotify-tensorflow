@@ -18,14 +18,23 @@
 
 from __future__ import absolute_import, division, print_function
 
-from collections import namedtuple
 import multiprocessing as mp
 
 import tensorflow as tf
 from tensorflow.python.lib.io import file_io
 
 
-DatasetContext = namedtuple("DatasetContext", ["filenames_placeholder", "num_features"])
+class DatasetContext(object):
+    """Holds additional information about/from Dataset parsing.
+
+    Attributes:
+        filenames_placeholder: A placeholder for Dataset file inputs.
+        num_features: Number of features available in the Dataset.
+    """
+
+    def __init__(self, filenames_placeholder, num_features):
+        self.filenames_placeholder = filenames_placeholder
+        self.num_features = num_features
 
 
 class Datasets(object):
