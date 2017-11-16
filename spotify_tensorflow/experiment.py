@@ -17,6 +17,8 @@
 
 from __future__ import absolute_import, division, print_function
 
+from abc import ABCMeta, abstractmethod
+
 import tensorflow as tf
 
 from .dataset import Datasets
@@ -24,39 +26,51 @@ from .dataset import Datasets
 FLAGS = tf.flags.FLAGS
 
 
-def mk_experiment_fn(estimator,
-                     training_data_dir,
-                     eval_data_dir,
-                     split_features_label):
-    """
-    :return: tf.contrib.learn.Experiment https://www.tensorflow.org/api_docs/python/tf/contrib/learn/Experiment  # noqa: E501
-    """
+class Experiment(object):
+    __metaclass__ = ABCMeta
 
-    def in_fn():
-        train_input_dataset = Datasets.mk_dataset_training(training_data_dir)
-        train_input_it = mk_iterator(train_input_dataset)
-        return split_features_label(train_input_it.get_next())
-
-    def eval_fn():
-        eval_input_dataset = Datasets.mk_dataset_eval(eval_data_dir)
-        eval_input_it = mk_iterator(eval_input_dataset)
-        return split_features_label(eval_input_it.get_next())
-
-    def do_make_experiment(run_config, params):
-        return tf.contrib.learn.Experiment(
-            estimator=estimator,
-            train_input_fn=in_fn,
-            eval_input_fn=eval_fn)
-
-    return do_make_experiment
+    @abstractmethod
+    def get_experiment_fn(self):
+        """Should return a function which returns an `Experiment`."""
+        pass
 
 
-def mk_iterator(dataset,
-                batch_size=FLAGS.batch_size,
-                buffer_size=FLAGS.buffer_size,
-                take_count=FLAGS.take_count):
-    dataset = dataset.shuffle(buffer_size)
-    dataset = dataset.batch(batch_size)
-    dataset = dataset.take(take_count)
-    iterator = dataset.make_one_shot_iterator()
-    return iterator
+class _ExperimentDummyImpl(Experiment):
+
+    def __init__(self,
+                 estimator,
+                 training_data_dir,
+                 eval_data_dir,
+                 split_features_label_fn):
+        def in_fn():
+            train_input_dataset = Datasets.mk_dataset_training(training_data_dir)
+            train_input_it = _ExperimentDummyImpl.__mk_iterator(train_input_dataset)
+            return split_features_label_fn(train_input_it.get_next())
+
+        def eval_fn():
+            eval_input_dataset = Datasets.mk_dataset_eval(eval_data_dir)
+            eval_input_it = _ExperimentDummyImpl.__mk_iterator(eval_input_dataset)
+            return split_features_label_fn(eval_input_it.get_next())
+
+        def do_make_experiment(run_config, params):
+            return tf.contrib.learn.Experiment(
+                estimator=estimator,
+                train_input_fn=in_fn,
+                eval_input_fn=eval_fn)
+
+        self.__experiment_fn = do_make_experiment
+
+    @staticmethod
+    def __mk_iterator(dataset,
+                      batch_size=FLAGS.batch_size,
+                      buffer_size=FLAGS.buffer_size,
+                      take_count=FLAGS.take_count):
+        dataset = dataset.shuffle(buffer_size)
+        dataset = dataset.batch(batch_size)
+        dataset = dataset.take(take_count)
+        # TODO(rav): evaluate the use of initializable iterator for more epochs?
+        iterator = dataset.make_one_shot_iterator()
+        return iterator
+
+    def get_experiment_fn(self):
+        return self.__experiment_fn

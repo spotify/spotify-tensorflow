@@ -21,7 +21,7 @@ import logging
 
 import tensorflow as tf
 
-from .experiment import mk_experiment_fn
+from .experiment import _ExperimentDummyImpl
 
 FLAGS = tf.flags.FLAGS
 
@@ -49,11 +49,22 @@ class Trainer(object):
         return tf.contrib.learn.RunConfig(model_dir=FLAGS.job_dir)
 
     @staticmethod
+    def __get_default_experiment_fn(estimator,
+                                    training_data_dir,
+                                    eval_data_dir,
+                                    split_features_label_fn):
+        return _ExperimentDummyImpl(estimator,
+                                    training_data_dir,
+                                    eval_data_dir,
+                                    split_features_label_fn)
+
+    @staticmethod
     def run(estimator,
             training_data_dir=None,
             eval_data_dir=None,
             split_features_label_fn=None,
-            run_config=None):
+            run_config=None,
+            experiment_fn=None):
         """Make and run an experiment based on given estimator.
 
         Args:
@@ -64,17 +75,21 @@ class Trainer(object):
             eval_data_dir: Directory containing training data. Default value is based on `Flags`.
             split_features_label_fn: Function used split features into examples and labels.
             run_config: `RunConfig` for the `Estimator`. Default value is based on `Flags`.
+            experiment_fn: `Experiment` holding experiment specification. Default value is based on
+                `Flags` and is implementation specific.
         """
 
         training_data_dir = training_data_dir or Trainer.__get_default_training_data_dir()
         eval_data_dir = eval_data_dir or Trainer.__get_default_eval_data_dir()
         run_config = run_config or Trainer.__get_default_run_config()
+        experiment_fn = experiment_fn or Trainer.__get_default_experiment_fn(estimator,
+                                                                             training_data_dir,
+                                                                             eval_data_dir,
+                                                                             split_features_label_fn
+                                                                             )
 
         logging.info("Training data directory: `%s`", training_data_dir)
         logging.info("Evaluation data directory: `%s`", eval_data_dir)
 
-        tf.contrib.learn.learn_runner.run(experiment_fn=mk_experiment_fn(estimator,
-                                                                         training_data_dir,
-                                                                         eval_data_dir,
-                                                                         split_features_label_fn),
+        tf.contrib.learn.learn_runner.run(experiment_fn=experiment_fn,
                                           run_config=run_config)
