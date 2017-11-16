@@ -18,6 +18,7 @@
 
 from __future__ import absolute_import, division, print_function
 
+import getpass
 import logging
 import subprocess
 import sys
@@ -66,7 +67,6 @@ class TensorFlowTask(luigi.Task):
 
     def __init__(self, *args, **kwargs):
         super(TensorFlowTask, self).__init__(*args, **kwargs)
-        self._job_name = None
 
     def tf_task_args(self):
         """A list of args to pass to the tf main module."""
@@ -123,7 +123,10 @@ class TensorFlowTask(luigi.Task):
         params = []
         if self.gcp_project:
             params.append("--project=%s" % self.gcp_project)
-        params.append("jobs submit training %s" % self._job_name)
+        import uuid
+        params.append("jobs submit training %s_%s_%s" % (getpass.getuser(),
+                                                         self.__class__.__name__,
+                                                         str(uuid.uuid4()).replace("-", "_")))
         if self.region:
             params.append("--region=%s" % self.region)
         if self.ml_engine_conf:
