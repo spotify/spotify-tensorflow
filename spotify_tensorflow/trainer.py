@@ -52,16 +52,19 @@ class Trainer(object):
     def __get_default_experiment_fn(estimator,
                                     training_data_dir,
                                     eval_data_dir,
+                                    feature_mapping_fn,
                                     split_features_label_fn):
         return _ExperimentDummyImpl(estimator,
                                     training_data_dir,
                                     eval_data_dir,
+                                    feature_mapping_fn,
                                     split_features_label_fn)
 
     @staticmethod
     def run(estimator,
             training_data_dir=None,
             eval_data_dir=None,
+            feature_mapping_fn=None,
             split_features_label_fn=None,
             run_config=None,
             experiment_fn=None):
@@ -73,6 +76,9 @@ class Trainer(object):
             training_data_dir: Directory containing training data.
                 Default value is based on `Flags`.
             eval_data_dir: Directory containing training data. Default value is based on `Flags`.
+            feature_mapping_fn: A function which maps feature spec line to `FixedLenFeature` or
+                `VarLenFeature` values. Default maps all features to
+                tf.FixedLenFeature((), tf.int64, default_value=0).
             split_features_label_fn: Function used split features into examples and labels.
             run_config: `RunConfig` for the `Estimator`. Default value is based on `Flags`.
             experiment_fn: `Experiment` holding experiment specification. Default value is based on
@@ -85,6 +91,7 @@ class Trainer(object):
         experiment_fn = experiment_fn or Trainer.__get_default_experiment_fn(estimator,
                                                                              training_data_dir,
                                                                              eval_data_dir,
+                                                                             feature_mapping_fn,
                                                                              split_features_label_fn
                                                                              )
 

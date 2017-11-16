@@ -32,19 +32,17 @@ class Datasets(object):
     _default_feature_desc_filename = "_feature_desc"
 
     @staticmethod
-    def get_parse_proto_function(feature_desc_path):
-        """
-        Get a function to parse Example proto using given features description.
-        Parse function takes a single argument a proto object.
+    def get_parse_proto_function(feature_desc_path, feature_mapping_fn):
+        """Get a function to parse `Example` proto using given features specifications.
 
-        :param feature_desc_path: filepath to feature description file
-        :type feature_desc_path: String
+        Args:
+            feature_desc_path: filepath to a feature description file.
+            feature_mapping_fn: A function which maps feature spec line to `FixedLenFeature` or
+                `VarLenFeature` values.
 
-        :return: a tuple with 2 elements: (number of features, parse function)
-
-        :Example:
-
-        TODO
+        Returns:
+            A Tuple of two elements: (number of features, parse function). Parse function takes a
+            single element - a scalar string Tensor, a single serialized Example.
         """
         assert isinstance(feature_desc_path, str), \
             "dir_path is not a String: %r" % feature_desc_path
@@ -54,9 +52,9 @@ class Datasets(object):
         def get_features(fpath):
             features = {}
             with file_io.FileIO(fpath, "r") as f:
-                for l in f.readlines():
-                    # abstract this away in Featran/* generator
-                    features[l.strip()] = tf.FixedLenFeature((), tf.int64, default_value=0)
+                for feature_spec_line in f.readlines():
+                    feature_spec_line = feature_spec_line.strip()
+                    features[feature_spec_line] = feature_mapping_fn(feature_spec_line)
             return features
 
         feature_spec = get_features(feature_desc_path)
@@ -69,6 +67,7 @@ class Datasets(object):
     @staticmethod
     def get_featran_example_dataset(dir_path,
                                     feature_desc_path=None,
+                                    feature_mapping_fn=None,
                                     num_threads=mp.cpu_count(),
                                     num_threads_per_file=mp.cpu_count(),
                                     block_length=32,
@@ -79,6 +78,9 @@ class Datasets(object):
             dir_path: Directory path containing features.
             feature_desc_path: Filepath to feature description file. Default is `_feature_desc`
                 inside `dir_path`.
+            feature_mapping_fn: A function which maps feature spec line to `FixedLenFeature` or
+                `VarLenFeature` values. Default maps all features to
+                tf.FixedLenFeature((), tf.int64, default_value=0).
             compression_type: A `tf.string` scalar evaluating to one of `""` (no compression)
                 `"ZLIB"`, or `"GZIP"`.
             num_threads: A `tf.int32` scalar or `tf.Tensor`, represents number of files to process
@@ -108,7 +110,9 @@ class Datasets(object):
         if feature_desc_path is None:
             feature_desc_path = pjoin(dir_path, Datasets._default_feature_desc_filename)
         filenames = tf.placeholder_with_default(input_files, shape=[None])
-        num_features, parse_fn = Datasets.get_parse_proto_function(feature_desc_path)
+        feature_mapping_fn = feature_mapping_fn or Datasets.__get_default_feature_mapping_fn()
+        num_features, parse_fn = Datasets.get_parse_proto_function(feature_desc_path,
+                                                                   feature_mapping_fn)
         dataset = (tf.data.Dataset.from_tensor_slices(filenames)
                    .interleave(lambda x: tf.data.TFRecordDataset(x, compression_type)
                                .map(parse_fn, num_parallel_calls=num_threads_per_file),
@@ -116,7 +120,11 @@ class Datasets(object):
         return dataset, DatasetContext(filenames_placeholder=filenames, num_features=num_features)
 
     @staticmethod
-    def mk_dataset_training(training_data_dir):
+    def __get_default_feature_mapping_fn():
+        return lambda l: tf.FixedLenFeature((), tf.int64, default_value=0)
+
+    @staticmethod
+    def mk_dataset_training(training_data_dir, feature_mapping_fn):
         """Make a training `Dataset`.
 
         Args:
@@ -126,11 +134,13 @@ class Datasets(object):
             A `Dataset` that should be used for training purposes.
         """
         with tf.name_scope("training-input"):
-            train_dataset, _ = Datasets.get_featran_example_dataset(training_data_dir)
+            train_dataset, _ = Datasets.get_featran_example_dataset(
+                training_data_dir,
+                feature_mapping_fn=feature_mapping_fn)
             return train_dataset
 
     @staticmethod
-    def mk_dataset_eval(eval_data_dir):
+    def mk_dataset_eval(eval_data_dir, feature_mapping_fn):
         """Make an evaluation `Dataset`.
 
         Args:
@@ -140,5 +150,7 @@ class Datasets(object):
             A `Dataset` that should be used for evaluation purposes.
         """
         with tf.name_scope("evaluation-input"):
-            eval_dataset, _ = Datasets.get_featran_example_dataset(eval_data_dir)
+            eval_dataset, _ = Datasets.get_featran_example_dataset(
+                eval_data_dir,
+                feature_mapping_fn=feature_mapping_fn)
             return eval_dataset

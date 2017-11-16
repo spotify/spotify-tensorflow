@@ -41,14 +41,16 @@ class _ExperimentDummyImpl(Experiment):
                  estimator,
                  training_data_dir,
                  eval_data_dir,
+                 feature_mapping_fn,
                  split_features_label_fn):
         def in_fn():
-            train_input_dataset = Datasets.mk_dataset_training(training_data_dir)
+            train_input_dataset = Datasets.mk_dataset_training(training_data_dir,
+                                                               feature_mapping_fn)
             train_input_it = _ExperimentDummyImpl.__mk_iterator(train_input_dataset)
             return split_features_label_fn(train_input_it.get_next())
 
         def eval_fn():
-            eval_input_dataset = Datasets.mk_dataset_eval(eval_data_dir)
+            eval_input_dataset = Datasets.mk_dataset_eval(eval_data_dir, feature_mapping_fn)
             eval_input_it = _ExperimentDummyImpl.__mk_iterator(eval_input_dataset)
             return split_features_label_fn(eval_input_it.get_next())
 
