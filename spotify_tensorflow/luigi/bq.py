@@ -18,9 +18,10 @@
 
 from __future__ import absolute_import, division, print_function
 
-from .external_daily_snapshot import ExternalDailySnapshot
 import luigi
 from luigi.contrib.bigquery import BigqueryTarget
+
+from .external_daily_snapshot import ExternalDailySnapshot
 
 
 class BigQueryDailySnapshot(ExternalDailySnapshot):
