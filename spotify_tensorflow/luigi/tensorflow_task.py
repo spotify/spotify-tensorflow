@@ -18,14 +18,15 @@
 
 from __future__ import absolute_import, division, print_function
 
-import datetime
-import getpass
 import logging
 import subprocess
 import sys
 
 import luigi
-from luigi.contrib.gcs import GCSTarget
+from luigi.contrib.gcs import GCSFlagTarget, GCSTarget
+from luigi.local_target import LocalTarget
+
+from .utils import is_gcs_path
 
 logger = logging.getLogger("luigi-interface")
 
@@ -56,11 +57,9 @@ class TensorFlowTask(luigi.Task):
 
     # Task parameters
     cloud = luigi.BoolParameter(description="Run on ml-engine")
-    job_dir_prefix = luigi.Parameter(description="A file path prefix, to which a user name "
-                                                 "and job name will be appended. When running on "
-                                                 "ml engine, this should be a GCS uri "
-                                                 "(ie. gs://bucket/path). A trailing "
-                                                 "/ is not required.")
+    blocking = luigi.BoolParameter(default=True, description="Run in stream-logs/blocking mode")
+    job_dir = luigi.Parameter(description="A job directory, used to store snapshots, logs and any "
+                                          "other artifacts. A trailing '/' is not required.")
     ml_engine_conf = luigi.Parameter(default=None,
                                      description="An ml-engine YAML configuration file.")
     tf_debug = luigi.BoolParameter(default=False, description="Run tf on debug mode")
@@ -74,12 +73,32 @@ class TensorFlowTask(luigi.Task):
         return []
 
     def run(self):
-        self._mk_job_name()
         cmd = self._mk_cmd()
         logger.info("Running:\n```\n%s\n```", cmd)
         ret = subprocess.call(cmd, shell=True)
         if ret != 0:
+            logger.error("Training failed. Aborting.")
             sys.exit(ret)
+        logger.info("Training successful. Marking as done.")
+        self._success_hook()
+
+    def output(self):
+        if is_gcs_path(self.get_job_dir()):
+            return GCSFlagTarget(self.get_job_dir())
+        else:
+            # assume local filesystem otherwise
+            return LocalTarget(self.get_job_dir())
+
+    # TODO(rav): look into luigi hooks
+    def _success_hook(self):
+        success_file = self.get_job_dir().rstrip("/") + "/_SUCCESS"
+        if is_gcs_path(self.get_job_dir()):
+            from luigi.contrib.gcs import GCSClient
+            client = GCSClient()
+            client.put_string("", success_file)
+        else:
+            # assume local filesystem otherwise
+            open(success_file, "a").close()
 
     def _mk_cmd(self):
         cmd = ["gcloud ml-engine"]
@@ -96,20 +115,9 @@ class TensorFlowTask(luigi.Task):
         cmd.extend(self._get_job_args())
         return " ".join(cmd)
 
-    def _mk_job_name(self):
-        if not self._job_name:
-            self._job_time = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
-            job_name = "{user}_{time}_model".format(user=getpass.getuser(), time=self._job_time)
-            model_suffix = \
-                self.model_name_suffix if self.model_name_suffix else self.__class__.__name__
-            job_name += "_%s" % model_suffix
-            self._job_name = job_name
-        return self._job_name
-
-    def _job_dir(self):
-        return "{prefix}/{user}/{job_name}".format(prefix=self.job_dir_prefix.rstrip("/"),
-                                                   user=getpass.getuser(),
-                                                   job_name=self._job_name)
+    def get_job_dir(self):
+        """Get job directory used to store snapshots, logs, final output and any other artifacts."""
+        return self.job_dir
 
     def _mk_cloud_params(self):
         params = []
@@ -120,7 +128,9 @@ class TensorFlowTask(luigi.Task):
             params.append("--region=%s" % self.region)
         if self.ml_engine_conf:
             params.append("--config=%s" % self.ml_engine_conf)
-        params.append("--job-dir=%s" % self._job_dir())
+        params.append("--job-dir=%s" % self.get_job_dir())
+        if self.blocking:
+            params.append("--stream-logs")  # makes the execution "blocking"
         return params
 
     def _get_model_args(self):
@@ -137,7 +147,7 @@ class TensorFlowTask(luigi.Task):
         args = ["--"]
         args.extend(self._get_input_args())
         if not self.cloud:
-            args.append("--job-dir=%s" % self._job_dir())
+            args.append("--job-dir=%s" % self.get_job_dir())
         args.extend(self.tf_task_args())
         return args
 
@@ -165,7 +175,7 @@ class TensorFlowTask(luigi.Task):
     def _get_uri(target):
         if hasattr(target, "uri"):
             return target.uri()
-        elif isinstance(target, GCSTarget):
+        elif isinstance(target, (GCSTarget, GCSFlagTarget)):
             return target.path
         else:
             raise ValueError("Unsupported input Target type: %s" % target.__class__.__name__)
