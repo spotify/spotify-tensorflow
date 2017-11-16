@@ -19,25 +19,26 @@ from __future__ import absolute_import, division, print_function
 
 import tensorflow as tf
 
-from .dataset import mk_dataset_eval, mk_dataset_training
+from .dataset import Datasets
 
 FLAGS = tf.flags.FLAGS
 
 
 def mk_experiment_fn(estimator,
-                     training_set,
+                     training_data_dir,
+                     eval_data_dir,
                      split_features_label):
     """
     :return: tf.contrib.learn.Experiment https://www.tensorflow.org/api_docs/python/tf/contrib/learn/Experiment  # noqa: E501
     """
 
     def in_fn():
-        train_input_dataset = mk_dataset_training(training_set)
+        train_input_dataset = Datasets.mk_dataset_training(training_data_dir)
         train_input_it = mk_iterator(train_input_dataset)
         return split_features_label(train_input_it.get_next())
 
     def eval_fn():
-        eval_input_dataset = mk_dataset_eval(training_set)
+        eval_input_dataset = Datasets.mk_dataset_eval(eval_data_dir)
         eval_input_it = mk_iterator(eval_input_dataset)
         return split_features_label(eval_input_it.get_next())
 
