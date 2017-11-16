@@ -15,11 +15,11 @@
 #  specific language governing permissions and limitations
 #  under the License.
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import tensorflow as tf
 
-from .dataset import mk_dataset_training, mk_dataset_eval
+from .dataset import mk_dataset_eval, mk_dataset_training
 
 FLAGS = tf.flags.FLAGS
 

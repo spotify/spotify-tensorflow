@@ -16,13 +16,13 @@
 # under the License.
 #
 
-from __future__ import division, print_function, absolute_import
-from six.moves import xrange
+from __future__ import absolute_import, division, print_function
 
 import datetime
 import logging
 
 import luigi
+from six.moves import xrange
 
 
 class ExternalDailySnapshot(luigi.ExternalTask):

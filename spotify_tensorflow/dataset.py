@@ -16,10 +16,10 @@
 # under the License.
 #
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-import multiprocessing as mp
 from collections import namedtuple
+import multiprocessing as mp
 
 import tensorflow as tf
 from tensorflow.python.lib.io import file_io

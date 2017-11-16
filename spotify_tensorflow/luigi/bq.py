@@ -16,12 +16,11 @@
 # under the License.
 #
 
-from __future__ import division, print_function, absolute_import
-
-import luigi
-from luigi.contrib.bigquery import BigqueryTarget
+from __future__ import absolute_import, division, print_function
 
 from external_daily_snapshot import ExternalDailySnapshot
+import luigi
+from luigi.contrib.bigquery import BigqueryTarget
 
 
 class BigQueryDailySnapshot(ExternalDailySnapshot):

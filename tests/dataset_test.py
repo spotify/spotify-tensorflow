@@ -15,15 +15,15 @@
 #  specific language governing permissions and limitations
 #  under the License.
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from os.path import join as pjoin
+
 from spotify_tensorflow.dataset import Datasets
 import tensorflow as tf
-
-from tensorflow.python.lib.io.tf_record import TFRecordWriter
 from tensorflow.core.example import example_pb2
 from tensorflow.core.example import feature_pb2
+from tensorflow.python.lib.io.tf_record import TFRecordWriter
 
 
 class DataUtil(object):
