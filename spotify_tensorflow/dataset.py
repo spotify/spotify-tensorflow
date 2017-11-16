@@ -73,22 +73,25 @@ class Datasets(object):
                                     num_threads_per_file=mp.cpu_count(),
                                     block_length=32,
                                     compression_type="ZLIB"):
-        """
-        Get Dataset of parsed Example protos.
+        """Get `Dataset` of parsed `Example` protos.
 
-        :param dir_path: directory path contains features
-        :type dir_path: String
-        :param feature_desc_path: filepath to feature description file
-        :type feature_desc_path: String
-        :param compression_type: A `tf.string` scalar evaluating to one of `""` (no compression)
-                                 `"ZLIB"`, or `"GZIP"`
-        :type compression_type: tf.string
+        Args:
+            dir_path: Directory path containing features.
+            feature_desc_path: Filepath to feature description file. Default is `_feature_desc`
+                inside `dir_path`.
+            compression_type: A `tf.string` scalar evaluating to one of `""` (no compression)
+                `"ZLIB"`, or `"GZIP"`.
+            num_threads: A `tf.int32` scalar or `tf.Tensor`, represents number of files to process
+                concurrently.
+            num_threads_per_file: A `tf.int32` scalar or `tf.Tensor`, represents number of threads
+                used concurrently per file.
+            block_length: A `tf.int32` scalar or `tf.Tensor`, represents buffer size for results
+                from any of the parsing threads.
 
-        :return: dataset, dict
-
-        :Example:
-
-        TODO
+        Returns:
+            A Tuple of two elements: (dataset, dataset_context). First element is a `Dataset`, which
+            holds results of the parsing of `Example` protos. Second element holds a
+            `DatasetContext` (see doc of `DatasetContext`).
         """
         assert isinstance(dir_path, str), "dir_path is not a String: %r" % dir_path
         assert isinstance(feature_desc_path, str) or feature_desc_path is None, \
