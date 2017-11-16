@@ -85,6 +85,18 @@ class Trainer(object):
         return do_make_experiment
 
     @staticmethod
+    def get_default_run_config():
+        """Returns a default `RunConfig` for `Estimator`."""
+        # this weird try/except is a static variable pattern in python
+        # https://stackoverflow.com/questions/279561/what-is-the-python-equivalent-of-static-variables-inside-a-function/16214510#16214510
+        try:
+            return Trainer.get_default_run_config.default_config
+        except AttributeError:
+            Trainer.get_default_run_config.default_config = tf.contrib.learn.RunConfig(
+                model_dir=FLAGS.job_dir)
+            return Trainer.get_default_run_config.default_config
+
+    @staticmethod
     def run(estimator,
             training_data_dir=None,
             eval_data_dir=None,
