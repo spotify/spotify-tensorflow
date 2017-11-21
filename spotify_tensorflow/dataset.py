@@ -18,11 +18,11 @@
 
 from __future__ import absolute_import, division, print_function
 
-import multiprocessing as mp
 import json
+import multiprocessing as mp
 import os
-import tensorflow as tf
 
+import tensorflow as tf
 from tensorflow.python.lib.io import file_io
 
 class DatasetContext(object):
