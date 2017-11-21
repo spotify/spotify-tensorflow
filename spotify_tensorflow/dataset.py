@@ -25,6 +25,7 @@ import os
 import tensorflow as tf
 from tensorflow.python.lib.io import file_io
 
+
 class DatasetContext(object):
     """Holds additional information about/from Dataset parsing.
 
