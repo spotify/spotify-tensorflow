@@ -19,12 +19,11 @@
 from __future__ import absolute_import, division, print_function
 
 import multiprocessing as mp
-
-import tensorflow as tf
-import os
 import json
-from tensorflow.python.lib.io import file_io
+import os
+import tensorflow as tf
 
+from tensorflow.python.lib.io import file_io
 
 class DatasetContext(object):
     """Holds additional information about/from Dataset parsing.
@@ -131,10 +130,11 @@ class Datasets(object):
         if tf_config is not None:
             tf_config_json = json.loads(tf_config)
             tf.logging.info("Found TF_CONFIG: %s" % tf_config)
-            num_workers = len(tf_config_json.get("cluster",{}).get("worker",[]))
+            num_workers = len(tf_config_json.get("cluster", {}).get("worker", []))
             worker_index = tf_config_json.get("task", {}).get("index", None)
             if worker_index is not None:
-                tf.logging.info("Sharding dataset on worker_index=%s out of %s workers" % (worker_index, num_workers))
+                tf.logging.info("Sharding dataset on worker_index=%s out of %s workers"
+                                % (worker_index, num_workers))
                 dataset = dataset.shard(num_workers, worker_index)
 
         # TODO(rav): does `map` need to be inside `interleave`, what are the performance diff?
