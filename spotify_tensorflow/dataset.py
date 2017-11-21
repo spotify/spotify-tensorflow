@@ -125,17 +125,16 @@ class Datasets(object):
                                                                    feature_mapping_fn)
         dataset = tf.data.Dataset.from_tensor_slices(filenames)
 
-        tf_config = os.environ.get('TF_CONFIG')
+        tf_config = os.environ.get("TF_CONFIG")
 
         # If TF_CONFIG is not available don't bother sharding
         if tf_config is not None:
             tf_config_json = json.loads(tf_config)
-            tf.logging.info('we have a TF_CONFIG: %s' % tf_config)
-            num_workers = len(tf_config_json.get('cluster',{}).get('worker',[]))
-            tf.logging.info('num_workers=%s' % num_workers)
-            worker_index = tf_config_json.get('task', {}).get('index', None)
-            tf.logging.info('sharding on worker_index=%s' % worker_index)
+            tf.logging.info("Found TF_CONFIG: %s" % tf_config)
+            num_workers = len(tf_config_json.get("cluster",{}).get("worker",[]))
+            worker_index = tf_config_json.get("task", {}).get("index", None)
             if worker_index is not None:
+                tf.logging.info("Sharding dataset on worker_index=%s out of %s workers" % (worker_index, num_workers))
                 dataset = dataset.shard(num_workers, worker_index)
 
         # TODO(rav): does `map` need to be inside `interleave`, what are the performance diff?
