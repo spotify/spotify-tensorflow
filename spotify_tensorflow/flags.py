@@ -37,7 +37,7 @@ class Flags(object):
                              "Size of the buffer of the dataset iterator.")
 
         flags.DEFINE_integer("take_count", -1,
-                             "Creates a `Dataset` with at most `count` elements from this dataset.")
+                             "Creates a `Dataset` with at most `count` batches from this dataset.")
 
         flags.DEFINE_string("train_subdir", "train",
                             "Location of training TFRecords, with the training set dir.")

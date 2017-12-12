@@ -139,12 +139,14 @@ class TensorFlowTask(luigi.Task):
     def _get_model_args(self):
         args = []
         if self.model_package:
-            package_path = "/".join(__import__(self.model_package).__file__.split("/")[:-1])
-            args.append("--package-path=%s" % package_path)
+            args.append("--package-path=%s" % self._get_package_path())
         if self.model_name:
             args.append("--module-name={package}.{module}".format(package=self.model_package,
                                                                   module=self.model_name))
         return args
+
+    def _get_package_path(self):
+        return "/".join(__import__(self.model_package).__file__.split("/")[:-1])
 
     def _get_job_args(self):
         args = ["--"]
@@ -161,7 +163,7 @@ class TensorFlowTask(luigi.Task):
         if not isinstance(job_input, dict):
             raise ValueError("Input (requires()) must be dict type")
         input_args = []
-        for (name, targets) in job_input.iteritems():
+        for (name, targets) in job_input.items():
             uris = [self._get_uri(target) for target in luigi.task.flatten(targets)]
             if isinstance(targets, dict):
                 # If targets is a dict that means it had multiple outputs. In this case make the
