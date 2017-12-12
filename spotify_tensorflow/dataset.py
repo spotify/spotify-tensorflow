@@ -133,7 +133,7 @@ class Datasets(object):
             tf.logging.info("Found TF_CONFIG: %s" % tf_config)
             num_workers = len(tf_config_json.get("cluster", {}).get("worker", []))
             worker_index = tf_config_json.get("task", {}).get("index", None)
-            if worker_index is not None:
+            if num_workers > 0 :
                 tf.logging.info("Sharding dataset on worker_index=%s out of %s workers"
                                 % (worker_index, num_workers))
                 dataset = dataset.shard(num_workers, worker_index)
