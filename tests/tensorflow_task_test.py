@@ -19,7 +19,7 @@ from __future__ import absolute_import, division, print_function
 
 from unittest import TestCase
 try:
-    from unittest.mock import patch # For python >= 3.3
+    from unittest.mock import patch  # For python >= 3.3
 except ImportError:
     from mock import patch
 
@@ -39,64 +39,64 @@ class TestRequires(luigi.ExternalTask):
 
 
 class DummyTask(TensorFlowTask):
-    model_package = 'models'
-    model_name = 'my_tf_model'
-    gcp_project = 'project-1'
-    region = 'europe-west1'
-    model_name_suffix = 'tf_model1'
+    model_package = "models"
+    model_name = "my_tf_model"
+    gcp_project = "project-1"
+    region = "europe-west1"
+    model_name_suffix = "tf_model1"
 
     def tf_task_args(self):
-        return ['--arg1=foo', '--arg2=bar']
+        return ["--arg1=foo", "--arg2=bar"]
 
     def requires(self):
-        return {'training-data': TestRequires()}
+        return {"training-data": TestRequires()}
 
 
 class TensorflowTaskTest(TestCase):
 
     def test_local_task(self):
         with patch.object(TensorFlowTask,
-                          '_get_package_path',
-                          return_value='/path/to/package'):
-            task = DummyTask(cloud=False, job_dir='/local/job/dir')
+                          "_get_package_path",
+                          return_value="/path/to/package"):
+            task = DummyTask(cloud=False, job_dir="/local/job/dir")
             expected = [
-                'gcloud ml-engine local train',
-                '--package-path=/path/to/package',
-                '--module-name=models.my_tf_model',
-                '--',
-                '--training-data=gs://training/data',
-                '--job-dir=/local/job/dir',
-                '--arg1=foo',
-                '--arg2=bar'
+                "gcloud ml-engine local train",
+                "--package-path=/path/to/package",
+                "--module-name=models.my_tf_model",
+                "--",
+                "--training-data=gs://training/data",
+                "--job-dir=/local/job/dir",
+                "--arg1=foo",
+                "--arg2=bar"
             ]
-            self.assertEquals(task._mk_cmd(), ' '.join(expected))
+            self.assertEquals(task._mk_cmd(), " ".join(expected))
 
     def test_cloud_task(self):
         with patch.object(TensorFlowTask,
-                          '_get_package_path',
-                          return_value='/path/to/package'):
+                          "_get_package_path",
+                          return_value="/path/to/package"):
             task = DummyTask(cloud=True,
-                             job_dir='gs://job/dir',
-                             ml_engine_conf='/path/conf.yaml',
+                             job_dir="gs://job/dir",
+                             ml_engine_conf="/path/conf.yaml",
                              blocking=False,
                              tf_debug=True)
             expected = [
-                'gcloud', 'ml-engine',
-                '--project=project-1',
-                'jobs', 'submit', 'training',
-                '.*_DummyTask_.*',
-                '--region=europe-west1',
-                '--config=/path/conf.yaml',
-                '--job-dir=gs://job/dir',
-                '--package-path=/path/to/package',
-                '--module-name=models.my_tf_model',
-                '--verbosity=debug',
-                '--',
-                '--training-data=gs://training/data',
-                '--arg1=foo',
-                '--arg2=bar'
+                "gcloud", "ml-engine",
+                "--project=project-1",
+                "jobs", "submit", "training",
+                ".*_DummyTask_.*",
+                "--region=europe-west1",
+                "--config=/path/conf.yaml",
+                "--job-dir=gs://job/dir",
+                "--package-path=/path/to/package",
+                "--module-name=models.my_tf_model",
+                "--verbosity=debug",
+                "--",
+                "--training-data=gs://training/data",
+                "--arg1=foo",
+                "--arg2=bar"
             ]
-            actual = task._mk_cmd().split(' ')
+            actual = task._mk_cmd().split(" ")
             self.assertEquals(actual[:6], expected[:6])
             self.assertRegexpMatches(actual[6], expected[6])
             self.assertEquals(actual[7:], expected[7:])
