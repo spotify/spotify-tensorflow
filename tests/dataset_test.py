@@ -19,45 +19,47 @@ from __future__ import absolute_import, division, print_function
 
 from os.path import join as pjoin
 
-from spotify_tensorflow.dataset import Datasets
 import tensorflow as tf
+from spotify_tensorflow.dataset import Datasets
 from tensorflow.core.example import example_pb2
 from tensorflow.core.example import feature_pb2
 from tensorflow.python.lib.io.tf_record import TFRecordWriter
 
 
 class DataUtil(object):
+    tf_record_spec = ("""{"version":1,""" +
+                      """"features":[["f1","Int64List",{}],["f2","Int64List",{}]],""" +
+                      """"compression":"UNCOMPRESSED"}""")
+    values = [{"f1": 1, "f2": 2}]
+    tf_record_spec_filename = "_tf_record_spec.json"
 
-    @staticmethod
-    def write_featran_test_data(feature_desc=["f1", "f2"],
-                                values=[{"f1": 1, "f2": 2}],
-                                feature_desc_filename="_feature_desc"):
+    @classmethod
+    def write_featran_test_data(cls):
         tmp_dir = tf.test.get_temp_dir()
-        feature_desc_file = pjoin(tmp_dir, feature_desc_filename)
+        feature_desc_file = pjoin(tmp_dir, cls.tf_record_spec_filename)
         with open(feature_desc_file, "w") as f:
-            f.writelines("\n".join(feature_desc))
-        e = DataUtil.get_example_proto(values)
+            f.write(cls.tf_record_spec)
+        e = DataUtil.get_example_proto()
         data_file = pjoin(tmp_dir, "test.tfrecord")
         with TFRecordWriter(data_file) as f:
             for i in e:
                 f.write(i.SerializeToString())
         return tmp_dir, data_file, feature_desc_file
 
-    @staticmethod
-    def get_example_proto(values=[{"f1": 1, "f2": 2}]):
+    @classmethod
+    def get_example_proto(cls):
         return [example_pb2.Example(features=feature_pb2.Features(feature={
-                    k: feature_pb2.Feature(int64_list=feature_pb2.Int64List(value=[v]))
-                    for k, v in d.items()
-                })) for d in values]
+            k: feature_pb2.Feature(int64_list=feature_pb2.Int64List(value=[v]))
+            for k, v in d.items()
+        })) for d in cls.values]
 
 
 class SquareTest(tf.test.TestCase):
-
     def testGetFeatranExampleDataset(self):
         d, _, _ = DataUtil.write_featran_test_data()
         with self.test_session() as sess:
-            dataset, c = Datasets.get_featran_example_dataset(d, compression_type="")
-            self.assertEquals(c.num_features, 2)
+            dataset, c = Datasets.get_featran_example_dataset(d)
+            self.assertEquals(len(c.feature_names), 2)
             iterator = dataset.make_one_shot_iterator()
             r = iterator.get_next()
             f1, f2 = r["f1"], r["f2"]
