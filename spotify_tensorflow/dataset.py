@@ -21,113 +21,97 @@ from __future__ import absolute_import, division, print_function
 import json
 import multiprocessing as mp
 import os
+from collections import namedtuple
 
 import tensorflow as tf
 from tensorflow.python.lib.io import file_io
 
+from .tf_record_spec_parser import TfRecordSpecParser
 
-class DatasetContext(object):
-    """Holds additional information about/from Dataset parsing.
+"""Holds additional information about/from Dataset parsing.
 
-    Attributes:
-        filenames_placeholder: A placeholder for Dataset file inputs.
-        num_features: Number of features available in the Dataset.
-    """
-
-    def __init__(self, filenames_placeholder, num_features):
-        self.filenames_placeholder = filenames_placeholder
-        self.num_features = num_features
+Attributes:
+    filenames_placeholder: A placeholder for Dataset file inputs.
+    num_features: Number of features available in the Dataset.
+"""
+DatasetContext = namedtuple("DatasetContext", ["filenames",
+                                               "feature_names",
+                                               "multispec_feature_groups"])
 
 
 class Datasets(object):
-    _default_feature_desc_filename = "_feature_desc"
-
-    @staticmethod
-    def get_parse_proto_function(feature_desc_path, feature_mapping_fn):
-        """Get a function to parse `Example` proto using given features specifications.
-
-        Args:
-            feature_desc_path: filepath to a feature description file.
-            feature_mapping_fn: A function which maps feature spec line to `FixedLenFeature` or
-                `VarLenFeature` values.
-
-        Returns:
-            A Tuple of two elements: (number of features, parse function). Parse function takes a
-            single element - a scalar string Tensor, a single serialized Example.
-        """
-        assert isinstance(feature_desc_path, str), \
-            "dir_path is not a String: %r" % feature_desc_path
-        assert file_io.file_exists(feature_desc_path), \
-            "feature desc `%s` does not exist" % feature_desc_path
-
-        def get_features(fpath):
-            features = {}
-            with file_io.FileIO(fpath, "r") as f:
-                for feature_spec_line in f.readlines():
-                    feature_spec_line = feature_spec_line.strip()
-                    features[feature_spec_line] = feature_mapping_fn(feature_spec_line)
-            return features
-
-        feature_spec = get_features(feature_desc_path)
-
-        def _parse_function(example_proto):
-            return tf.parse_single_example(example_proto, feature_spec)
-
-        return len(feature_spec), _parse_function
-
-    @staticmethod
-    def get_featran_example_dataset(dir_path,
-                                    feature_desc_path=None,
+    @classmethod
+    def get_featran_example_dataset(cls,
+                                    dir_path,
                                     feature_mapping_fn=None,
                                     num_threads=mp.cpu_count(),
                                     num_threads_per_file=mp.cpu_count(),
                                     block_length=32,
-                                    compression_type="ZLIB"):
+                                    tf_record_spec_path=None):
         """Get `Dataset` of parsed `Example` protos.
 
         Args:
             dir_path: Directory path containing features.
-            feature_desc_path: Filepath to feature description file. Default is `_feature_desc`
-                inside `dir_path`.
-            feature_mapping_fn: A function which maps feature spec line to `FixedLenFeature` or
+            feature_mapping_fn: A function which maps `FeatureInfo` to `FixedLenFeature` or
                 `VarLenFeature` values. Default maps all features to
-                tf.FixedLenFeature((), tf.int64, default_value=0).
-            compression_type: A `tf.string` scalar evaluating to one of `""` (no compression)
-                `"ZLIB"`, or `"GZIP"`.
+                tf.FixedLenFeature((), feature_info.type, default_value=0).
             num_threads: A `tf.int32` scalar or `tf.Tensor`, represents number of files to process
                 concurrently.
             num_threads_per_file: A `tf.int32` scalar or `tf.Tensor`, represents number of threads
                 used concurrently per file.
             block_length: A `tf.int32` scalar or `tf.Tensor`, represents buffer size for results
                 from any of the parsing threads.
+            tf_record_spec_path: Filepath to feature description file. Default is
+                `_tf_record_spec.json` inside `dir_path`.
 
         Returns:
             A Tuple of two elements: (dataset, dataset_context). First element is a `Dataset`, which
             holds results of the parsing of `Example` protos. Second element holds a
             `DatasetContext` (see doc of `DatasetContext`).
         """
+
+        filenames = cls.__get_tfrecord_filenames(dir_path)
+        dataset = tf.data.Dataset.from_tensor_slices(filenames)
+
+        feature_info, compression, feature_groups = TfRecordSpecParser.parse_tf_record_spec(
+            tf_record_spec_path, dir_path)
+
+        feature_mapping_fn = feature_mapping_fn or cls.__get_default_feature_mapping_fn
+        features = feature_mapping_fn(feature_info)
+
+        def _parse_function(example_proto):
+            return tf.parse_single_example(example_proto, features)
+
+        dataset = cls.__try_enable_sharding(dataset)
+
+        # TODO(rav): does `map` need to be inside `interleave`, what are the performance diff?
+        dataset = dataset.interleave(lambda f: tf.data.TFRecordDataset(f, compression),
+                                     cycle_length=num_threads,
+                                     block_length=block_length)
+        dataset = dataset.map(_parse_function, num_parallel_calls=num_threads_per_file)
+        context = DatasetContext(filenames, features, feature_groups)
+        return dataset, context
+
+    @staticmethod
+    def __get_tfrecord_filenames(dir_path):
         assert isinstance(dir_path, str), "dir_path is not a String: %r" % dir_path
-        assert isinstance(feature_desc_path, str) or feature_desc_path is None, \
-            "dir_path is not a String: %r" % feature_desc_path
         assert file_io.file_exists(dir_path), "directory `%s` does not exist" % dir_path
         assert file_io.is_directory(dir_path), "`%s` is not a directory" % dir_path
-        if feature_desc_path:
-            assert file_io.file_exists(feature_desc_path), \
-                "feature desc `%s` does not exist" % feature_desc_path
-
         from os.path import join as pjoin
         flist = file_io.list_directory(dir_path)
         input_files = [pjoin(dir_path, x) for x in filter(lambda f: not f.startswith("_"), flist)]
-        feature_desc_path = feature_desc_path or Datasets.__get_default_feature_desc_path(dir_path)
         filenames = tf.placeholder_with_default(input_files, shape=[None])
-        feature_mapping_fn = feature_mapping_fn or Datasets.__get_default_feature_mapping_fn()
-        num_features, parse_fn = Datasets.get_parse_proto_function(feature_desc_path,
-                                                                   feature_mapping_fn)
-        dataset = tf.data.Dataset.from_tensor_slices(filenames)
+        return filenames
 
+    @staticmethod
+    def __get_default_feature_mapping_fn(feature_info):
+        fm = [(f.name, tf.FixedLenFeature((), f.type, default_value=0)) for f in feature_info]
+        return dict(fm)
+
+    @staticmethod
+    def __try_enable_sharding(dataset):
         tf_config = os.environ.get("TF_CONFIG")
 
-        # If TF_CONFIG is not available don't bother sharding
         if tf_config is not None:
             tf_config_json = json.loads(tf_config)
             tf.logging.info("Found TF_CONFIG: %s" % tf_config)
@@ -136,23 +120,8 @@ class Datasets(object):
             if worker_index is not None:
                 tf.logging.info("Sharding dataset on worker_index=%s out of %s workers"
                                 % (worker_index, num_workers))
-                dataset = dataset.shard(num_workers, worker_index)
-
-        # TODO(rav): does `map` need to be inside `interleave`, what are the performance diff?
-        dataset = dataset.interleave(lambda f: tf.data.TFRecordDataset(f, compression_type),
-                                     cycle_length=num_threads,
-                                     block_length=block_length)
-        dataset = dataset.map(parse_fn, num_parallel_calls=num_threads_per_file)
-        return dataset, DatasetContext(filenames_placeholder=filenames, num_features=num_features)
-
-    @staticmethod
-    def __get_default_feature_mapping_fn():
-        return lambda l: tf.FixedLenFeature((), tf.int64, default_value=0)
-
-    @staticmethod
-    def __get_default_feature_desc_path(dir_path):
-        from os.path import join as pjoin
-        return pjoin(dir_path, Datasets._default_feature_desc_filename)
+                return dataset.shard(num_workers, worker_index)
+        return dataset
 
     @staticmethod
     def mk_dataset_training(training_data_dir, feature_mapping_fn):
@@ -160,6 +129,9 @@ class Datasets(object):
 
         Args:
             training_data_dir: a directory contains training data.
+            feature_mapping_fn: A function which maps `FeatureInfo` to `FixedLenFeature` or
+                `VarLenFeature` values. Default maps all features to
+                tf.FixedLenFeature((), feature_info.type, default_value=0).
 
         Returns:
             A `Dataset` that should be used for training purposes.
@@ -176,6 +148,9 @@ class Datasets(object):
 
         Args:
             eval_data_dir: a directory contains evaluation data.
+            feature_mapping_fn: A function which maps `FeatureInfo` to `FixedLenFeature` or
+                `VarLenFeature` values. Default maps all features to
+                tf.FixedLenFeature((), feature_info.type, default_value=0).
 
         Returns:
             A `Dataset` that should be used for evaluation purposes.
