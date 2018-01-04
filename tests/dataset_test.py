@@ -57,7 +57,7 @@ class SquareTest(tf.test.TestCase):
         d, _, _ = DataUtil.write_featran_test_data()
         with self.test_session() as sess:
             dataset, c = Datasets._get_featran_example_dataset(d, compression_type="")
-            self.assertEquals(c.num_features, 2)
+            self.assertEquals(len(c.features), 2)
             iterator = dataset.make_one_shot_iterator()
             r = iterator.get_next()
             f1, f2 = r["f1"], r["f2"]
