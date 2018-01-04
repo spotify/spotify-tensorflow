@@ -49,7 +49,7 @@ class FeatranDatasetExample(object):
     @staticmethod
     def get_input(args):
         with tf.name_scope("input"):
-            dataset, c = Datasets.get_featran_example_dataset(args.input, gen_spec=["label"])
+            dataset, c = Datasets._get_featran_example_dataset(args.input, gen_spec=["label"])
             iterator = dataset.make_initializable_iterator()
             (label,), features = iterator.get_next()
             label = tf.reshape(label, [-1, 1])

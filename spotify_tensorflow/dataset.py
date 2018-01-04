@@ -77,10 +77,10 @@ class Datasets(object):
         return len(feature_spec), _parse_function
 
     @staticmethod
-    def get_featran_example_dataset(dir_path,
-                                    feature_desc_path=None,
-                                    feature_mapping_fn=None,
-                                    compression_type="ZLIB"):
+    def _get_featran_example_dataset(dir_path,
+                                     feature_desc_path=None,
+                                     feature_mapping_fn=None,
+                                     compression_type="ZLIB"):
         """Get `Dataset` of parsed `Example` protos.
 
         Args:
@@ -149,34 +149,56 @@ class Datasets(object):
         from os.path import join as pjoin
         return pjoin(dir_path, Datasets._default_feature_desc_filename)
 
-    @staticmethod
-    def mk_dataset_training(training_data_dir, feature_mapping_fn):
-        """Make a training `Dataset`.
+    @classmethod
+    def mk_training_iter(cls, training_data_dir, feature_mapping_fn):
+        """Make a training `Dataset` iterator.
 
         Args:
             training_data_dir: a directory contains training data.
+            feature_mapping_fn: A function which maps `FeatureInfo` to `FixedLenFeature` or
+                `VarLenFeature` values. Default maps all features to
+                tf.FixedLenFeature((), feature_info.type, default_value=0).
 
         Returns:
             A `Dataset` that should be used for training purposes.
         """
         with tf.name_scope("training-input"):
-            train_dataset, _ = Datasets.get_featran_example_dataset(
+            train_dataset, _ = cls._get_featran_example_dataset(
                 training_data_dir,
                 feature_mapping_fn=feature_mapping_fn)
-            return train_dataset
+            return cls._mk_iterator(train_dataset)
 
-    @staticmethod
-    def mk_dataset_eval(eval_data_dir, feature_mapping_fn):
-        """Make an evaluation `Dataset`.
+    @classmethod
+    def mk_eval_iter(cls, eval_data_dir, feature_mapping_fn):
+        """Make an evaluation `Dataset` iterator.
 
         Args:
             eval_data_dir: a directory contains evaluation data.
+            feature_mapping_fn: A function which maps `FeatureInfo` to `FixedLenFeature` or
+                `VarLenFeature` values. Default maps all features to
+                tf.FixedLenFeature((), feature_info.type, default_value=0).
 
         Returns:
             A `Dataset` that should be used for evaluation purposes.
         """
         with tf.name_scope("evaluation-input"):
-            eval_dataset, _ = Datasets.get_featran_example_dataset(
+            eval_dataset, _ = cls._get_featran_example_dataset(
                 eval_data_dir,
                 feature_mapping_fn=feature_mapping_fn)
-            return eval_dataset
+            return cls._mk_iterator(eval_dataset)
+
+    @staticmethod
+    def _mk_iterator(dataset):
+        if FLAGS.shuffle_buffer_size > 0:
+            dataset = dataset.shuffle(FLAGS.shuffle_buffer_size)
+
+        if FLAGS.batch_size > 0:
+            dataset = dataset.batch(FLAGS.batch_size)
+
+        dataset = dataset.take(FLAGS.take_count)
+
+        if FLAGS.prefetch_buffer_size > 0:
+            dataset = dataset.prefetch(FLAGS.prefetch_buffer_size)
+        # TODO(rav): evaluate the use of initializable iterator for more epochs?
+        iterator = dataset.make_one_shot_iterator()
+        return iterator
