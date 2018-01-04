@@ -58,6 +58,9 @@ class Flags(object):
         flags.DEFINE_integer("interleaving_block_length", 32,
                              "Interleaving block length.")
 
+        flags.DEFINE_integer("prefetch_buffer_size", 1024,
+                             "Prefetch records. 0 means no pre-fetching.")
+
     @staticmethod
     def register_core_flags():
         logging.info("Registering core spotify-tensorflow flags")

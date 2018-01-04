@@ -73,6 +73,9 @@ class Trainer(object):
                 dataset = dataset.batch(FLAGS.batch_size)
 
             dataset = dataset.take(FLAGS.take_count)
+
+            if FLAGS.prefetch_buffer_size > 0:
+                dataset = dataset.prefetch(FLAGS.prefetch_buffer_size)
             # TODO(rav): evaluate the use of initializable iterator for more epochs?
             iterator = dataset.make_one_shot_iterator()
             return iterator
