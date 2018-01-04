@@ -20,6 +20,7 @@ from __future__ import absolute_import, division, print_function
 
 import json
 import os
+from collections import namedtuple
 
 import tensorflow as tf
 from tensorflow.python.lib.io import file_io
@@ -27,17 +28,13 @@ from tensorflow.python.lib.io import file_io
 FLAGS = tf.flags.FLAGS
 
 
-class DatasetContext(object):
+class DatasetContext(namedtuple("DatasetContext", ["filenames", "num_features"])):
     """Holds additional information about/from Dataset parsing.
 
     Attributes:
-        filenames_placeholder: A placeholder for Dataset file inputs.
+        filenames: A placeholder for Dataset file inputs.
         num_features: Number of features available in the Dataset.
     """
-
-    def __init__(self, filenames_placeholder, num_features):
-        self.filenames_placeholder = filenames_placeholder
-        self.num_features = num_features
 
 
 class Datasets(object):
@@ -138,7 +135,7 @@ class Datasets(object):
             dataset = tf.data.TFRecordDataset(filenames, compression_type)
 
         dataset = dataset.map(parse_fn, num_parallel_calls=FLAGS.parsing_threads)
-        return dataset, DatasetContext(filenames_placeholder=filenames, num_features=num_features)
+        return dataset, DatasetContext(filenames, num_features)
 
     @staticmethod
     def __get_default_feature_mapping_fn():
