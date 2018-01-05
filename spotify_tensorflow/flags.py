@@ -18,6 +18,7 @@
 from __future__ import absolute_import, division, print_function
 
 import logging
+import multiprocessing as mp
 
 import tensorflow as tf
 
@@ -30,20 +31,35 @@ class Flags(object):
     @staticmethod
     def register_dataset_flags():
         logging.info("Registering Dataset flags")
-        flags.DEFINE_integer("batch_size", 128,
-                             "Size of the batch of the dataset iterator.")
-
-        flags.DEFINE_integer("buffer_size", 512,
-                             "Size of the buffer of the dataset iterator.")
-
-        flags.DEFINE_integer("take_count", -1,
-                             "Creates a `Dataset` with at most `count` batches from this dataset.")
 
         flags.DEFINE_string("train_subdir", "train",
                             "Location of training TFRecords, with the training set dir.")
 
         flags.DEFINE_string("eval_subdir", "eval",
                             "Location of eval TFRecords, with the training set dir.")
+
+        # Dataset API parameters
+
+        flags.DEFINE_integer("batch_size", 128,
+                             "Size of the batch of the dataset iterator. 0 means no batching.")
+
+        flags.DEFINE_integer("shuffle_buffer_size", 512,
+                             "Size of the shuffle buffer. 0 means shuffle is turned off.")
+
+        flags.DEFINE_integer("take_count", -1,
+                             "Creates a `Dataset` with at most `count` batches from this dataset.")
+
+        flags.DEFINE_integer("parsing_threads", mp.cpu_count(),
+                             "Number of threads used for parsing files.")
+
+        flags.DEFINE_integer("interleaving_threads", 2,
+                             "Interleaving cycle length. 0 means interleaving is turned off.")
+
+        flags.DEFINE_integer("interleaving_block_length", 32,
+                             "Interleaving block length.")
+
+        flags.DEFINE_integer("prefetch_buffer_size", 1024,
+                             "Prefetch records. 0 means no pre-fetching.")
 
     @staticmethod
     def register_core_flags():

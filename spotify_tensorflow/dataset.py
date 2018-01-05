@@ -19,11 +19,12 @@
 from __future__ import absolute_import, division, print_function
 
 import json
-import multiprocessing as mp
 import os
 
 import tensorflow as tf
 from tensorflow.python.lib.io import file_io
+
+FLAGS = tf.flags.FLAGS
 
 
 class DatasetContext(object):
@@ -79,9 +80,6 @@ class Datasets(object):
     def get_featran_example_dataset(dir_path,
                                     feature_desc_path=None,
                                     feature_mapping_fn=None,
-                                    num_threads=mp.cpu_count(),
-                                    num_threads_per_file=mp.cpu_count(),
-                                    block_length=32,
                                     compression_type="ZLIB"):
         """Get `Dataset` of parsed `Example` protos.
 
@@ -94,12 +92,6 @@ class Datasets(object):
                 tf.FixedLenFeature((), tf.int64, default_value=0).
             compression_type: A `tf.string` scalar evaluating to one of `""` (no compression)
                 `"ZLIB"`, or `"GZIP"`.
-            num_threads: A `tf.int32` scalar or `tf.Tensor`, represents number of files to process
-                concurrently.
-            num_threads_per_file: A `tf.int32` scalar or `tf.Tensor`, represents number of threads
-                used concurrently per file.
-            block_length: A `tf.int32` scalar or `tf.Tensor`, represents buffer size for results
-                from any of the parsing threads.
 
         Returns:
             A Tuple of two elements: (dataset, dataset_context). First element is a `Dataset`, which
@@ -138,11 +130,14 @@ class Datasets(object):
                                 % (worker_index, num_workers))
                 dataset = dataset.shard(num_workers, worker_index)
 
-        # TODO(rav): does `map` need to be inside `interleave`, what are the performance diff?
-        dataset = dataset.interleave(lambda f: tf.data.TFRecordDataset(f, compression_type),
-                                     cycle_length=num_threads,
-                                     block_length=block_length)
-        dataset = dataset.map(parse_fn, num_parallel_calls=num_threads_per_file)
+        if FLAGS.interleaving_threads > 0:
+            dataset = dataset.interleave(lambda f: tf.data.TFRecordDataset(f, compression_type),
+                                         cycle_length=FLAGS.interleaving_threads,
+                                         block_length=FLAGS.interleaving_block_length)
+        else:
+            dataset = tf.data.TFRecordDataset(filenames, compression_type)
+
+        dataset = dataset.map(parse_fn, num_parallel_calls=FLAGS.parsing_threads)
         return dataset, DatasetContext(filenames_placeholder=filenames, num_features=num_features)
 
     @staticmethod

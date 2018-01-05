@@ -65,13 +65,17 @@ class Trainer(object):
             eval_input_it = mk_iterator(eval_input_dataset)
             return split_features_label_fn(eval_input_it.get_next())
 
-        def mk_iterator(dataset,
-                        batch_size=FLAGS.batch_size,
-                        buffer_size=FLAGS.buffer_size,
-                        take_count=FLAGS.take_count):
-            dataset = dataset.shuffle(buffer_size)
-            dataset = dataset.batch(batch_size)
-            dataset = dataset.take(take_count)
+        def mk_iterator(dataset):
+            if FLAGS.shuffle_buffer_size > 0:
+                dataset = dataset.shuffle(FLAGS.shuffle_buffer_size)
+
+            if FLAGS.batch_size > 0:
+                dataset = dataset.batch(FLAGS.batch_size)
+
+            dataset = dataset.take(FLAGS.take_count)
+
+            if FLAGS.prefetch_buffer_size > 0:
+                dataset = dataset.prefetch(FLAGS.prefetch_buffer_size)
             # TODO(rav): evaluate the use of initializable iterator for more epochs?
             iterator = dataset.make_one_shot_iterator()
             return iterator
