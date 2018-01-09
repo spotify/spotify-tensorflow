@@ -49,7 +49,7 @@ class Datasets(object):
             dir_path: Directory path containing features.
 
         Returns:
-            An array containing the names of the features.
+            A list containing the names of the features.
         """
         if feature_desc_path is None:
             feature_desc_path = pjoin(dir_path, "_feature_desc")
