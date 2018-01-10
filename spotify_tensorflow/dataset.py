@@ -26,59 +26,38 @@ from os.path import join as pjoin
 import tensorflow as tf
 from tensorflow.python.lib.io import file_io
 
+from .tf_record_spec_parser import TfRecordSpecParser
+
 FLAGS = tf.flags.FLAGS
 
 
-class DatasetContext(namedtuple("DatasetContext", ["filenames", "features"])):
+class DatasetContext(namedtuple("DatasetContext", ["filenames",
+                                                   "features",
+                                                   "multispec_feature_groups"])):
     """Holds additional information about/from Dataset parsing.
 
     Attributes:
         filenames: A placeholder for Dataset file inputs.
         features: Map features and their type available in the Dataset.
+        multispec_feature_groups: Feature names, grouped as they appear in Featran MultiFeatureSpec
     """
 
 
 class Datasets(object):
-
-    @staticmethod
-    def _parse_feature_desc(feature_desc_path, dir_path):
-        """Extract the names of the features out of the feature description file.
-
-        Args:
-            feature_desc_path: filepath to a feature description file.
-            dir_path: Directory path containing features.
-
-        Returns:
-            A list containing the names of the features.
-        """
-        if feature_desc_path is None:
-            feature_desc_path = pjoin(dir_path, "_feature_desc")
-        else:
-            assert isinstance(feature_desc_path, str), \
-                "dir_path is not a String: %r" % feature_desc_path
-            assert file_io.file_exists(feature_desc_path), \
-                "feature desc `%s` does not exist" % feature_desc_path
-
-        with file_io.FileIO(feature_desc_path, "r") as f:
-            return [feature_name.strip() for feature_name in f.readlines()]
-
     @classmethod
     def _get_featran_example_dataset(cls,
                                      dir_path,
-                                     feature_desc_path=None,
                                      feature_mapping_fn=None,
-                                     compression_type="ZLIB"):
+                                     tf_record_spec_path=None):
         """Get `Dataset` of parsed `Example` protos.
 
         Args:
             dir_path: Directory path containing features.
-            feature_desc_path: Filepath to feature description file. Default is `_feature_desc`
-                inside `dir_path`.
             feature_mapping_fn: A function which maps feature names to `FixedLenFeature` or
                 `VarLenFeature` values. Default maps all features to
                 tf.FixedLenFeature((), tf.int64, default_value=0).
-            compression_type: A `tf.string` scalar evaluating to one of `""` (no compression)
-                `"ZLIB"`, or `"GZIP"`.
+            tf_record_spec_path: Filepath to feature description file. Default is
+                `_tf_record_spec.json` inside `dir_path`.
 
         Returns:
             A Tuple of two elements: (dataset, dataset_context). First element is a `Dataset`, which
@@ -86,26 +65,28 @@ class Datasets(object):
             `DatasetContext` (see doc of `DatasetContext`).
         """
         filenames = cls._get_tfrecord_filenames(dir_path)
-        feature_names = cls._parse_feature_desc(feature_desc_path, dir_path)
+
+        feature_info, compression, feature_groups = TfRecordSpecParser.parse_tf_record_spec(
+            tf_record_spec_path, dir_path)
 
         if FLAGS.interleaving_threads > 0:
             dataset = tf.data.Dataset.from_tensor_slices(filenames)
-            dataset = dataset.interleave(lambda f: tf.data.TFRecordDataset(f, compression_type),
+            dataset = dataset.interleave(lambda f: tf.data.TFRecordDataset(f, compression),
                                          cycle_length=FLAGS.interleaving_threads,
                                          block_length=FLAGS.interleaving_block_length)
         else:
-            dataset = tf.data.TFRecordDataset(filenames, compression_type)
+            dataset = tf.data.TFRecordDataset(filenames, compression)
 
         dataset = cls._try_enable_sharding(dataset)
 
         feature_mapping_fn = feature_mapping_fn or cls._get_default_feature_mapping_fn
-        features = feature_mapping_fn(feature_names)
+        features = feature_mapping_fn(feature_info)
 
         def _parse_function(example_proto):
             return tf.parse_single_example(example_proto, features)
 
         dataset = dataset.map(_parse_function, num_parallel_calls=FLAGS.parsing_threads)
-        return dataset, DatasetContext(filenames, features)
+        return dataset, DatasetContext(filenames, features, feature_groups)
 
     @staticmethod
     def _get_tfrecord_filenames(dir_path):
@@ -118,8 +99,8 @@ class Datasets(object):
         return filenames
 
     @staticmethod
-    def _get_default_feature_mapping_fn(feature_names):
-        fm = [(name, tf.FixedLenFeature((), tf.int64, default_value=0)) for name in feature_names]
+    def _get_default_feature_mapping_fn(feature_info):
+        fm = [(f.name, tf.FixedLenFeature((), f.kind, default_value=0)) for f in feature_info]
         return dict(fm)
 
     @staticmethod
@@ -138,45 +119,28 @@ class Datasets(object):
         return dataset
 
     @classmethod
-    def mk_training_iter(cls, training_data_dir, feature_mapping_fn):
+    def mk_iter(cls, data_dir,
+                scope="tfrecords_iter",
+                feature_mapping_fn=None):
         """Make a training `Dataset` iterator.
 
         Args:
-            training_data_dir: a directory contains training data.
+            data_dir: a directory contains training data.
+            scope: TF name score for this op.
             feature_mapping_fn: A function which maps `FeatureInfo` to `FixedLenFeature` or
                 `VarLenFeature` values. Default maps all features to
                 tf.FixedLenFeature((), feature_info.type, default_value=0).
 
         Returns:
-            A `Dataset` that should be used for training purposes.
+            A `Dataset` that should be used for training purposes and a `DatasetContext` object.
         """
-        with tf.name_scope("training-input"):
-            train_dataset, _ = cls._get_featran_example_dataset(
-                training_data_dir,
-                feature_mapping_fn=feature_mapping_fn)
-            return cls._mk_iterator(train_dataset)
-
-    @classmethod
-    def mk_eval_iter(cls, eval_data_dir, feature_mapping_fn):
-        """Make an evaluation `Dataset` iterator.
-
-        Args:
-            eval_data_dir: a directory contains evaluation data.
-            feature_mapping_fn: A function which maps `FeatureInfo` to `FixedLenFeature` or
-                `VarLenFeature` values. Default maps all features to
-                tf.FixedLenFeature((), feature_info.type, default_value=0).
-
-        Returns:
-            A `Dataset` that should be used for evaluation purposes.
-        """
-        with tf.name_scope("evaluation-input"):
-            eval_dataset, _ = cls._get_featran_example_dataset(
-                eval_data_dir,
-                feature_mapping_fn=feature_mapping_fn)
-            return cls._mk_iterator(eval_dataset)
+        with tf.name_scope(scope):
+            dataset, context = cls._get_featran_example_dataset(data_dir,
+                                                          feature_mapping_fn)
+            return cls._mk_one_shot_iterator(dataset), context
 
     @staticmethod
-    def _mk_iterator(dataset):
+    def _mk_one_shot_iterator(dataset):
         if FLAGS.shuffle_buffer_size > 0:
             dataset = dataset.shuffle(FLAGS.shuffle_buffer_size)
 
