@@ -50,7 +50,7 @@ class TfRecordSpecParser(object):
             for name, _, tags in feature_info:
                 d[int(tags["multispec-id"])].add(name)
             multispec_feature_groups = [None] * len(d)
-            for i, f in d.iteritems():
+            for i, f in d.items():
                 multispec_feature_groups[i] = list(f)
 
         # parse compression

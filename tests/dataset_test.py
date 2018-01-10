@@ -24,7 +24,6 @@ import tensorflow as tf
 from tensorflow.core.example import example_pb2
 from tensorflow.core.example import feature_pb2
 from tensorflow.python.lib.io.tf_record import TFRecordWriter
-
 from spotify_tensorflow.dataset import Datasets
 
 
@@ -69,3 +68,15 @@ class SquareTest(tf.test.TestCase):
             self.assertAllEqual([1, 2], sess.run([f1, f2]))
             with self.assertRaises(tf.errors.OutOfRangeError):
                 f1.eval()
+
+    def testMkIter(self):
+        test_dir = os.path.dirname(os.path.realpath(__file__))
+        it, context = Datasets.mk_iter(os.path.join(test_dir, "resources"))
+        batch_it = it.get_next()
+
+        with tf.Session() as sess:
+            batch = sess.run(batch_it)
+            assert len(batch) == len(context.features)
+
+            first_feature = list(context.features.keys())[0]
+            assert len(batch[first_feature]) == tf.flags.FLAGS.batch_size

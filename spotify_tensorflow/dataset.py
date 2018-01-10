@@ -136,7 +136,7 @@ class Datasets(object):
         """
         with tf.name_scope(scope):
             dataset, context = cls._get_featran_example_dataset(data_dir,
-                                                          feature_mapping_fn)
+                                                                feature_mapping_fn)
             return cls._mk_one_shot_iterator(dataset), context
 
     @staticmethod
