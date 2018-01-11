@@ -76,7 +76,8 @@ class SquareTest(tf.test.TestCase):
 
         with tf.Session() as sess:
             batch = sess.run(batch_it)
-            assert len(batch) == len(context.features)
+            assert len(batch) == len(context.features), "Wrong number of features"
 
             first_feature = list(context.features.keys())[0]
-            assert len(batch[first_feature]) == tf.flags.FLAGS.batch_size
+            assert len(batch[first_feature]) == tf.flags.FLAGS.batch_size, "Wrongs number of " \
+                                                                           "points in the batch "

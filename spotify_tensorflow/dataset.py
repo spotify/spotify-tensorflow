@@ -121,36 +121,40 @@ class Datasets(object):
     @classmethod
     def mk_iter(cls, data_dir,
                 scope="tfrecords_iter",
-                feature_mapping_fn=None):
+                feature_mapping_fn=None,
+                mk_iterator_fn=None):
         """Make a training `Dataset` iterator.
 
         Args:
             data_dir: a directory contains training data.
-            scope: TF name score for this op.
+            scope: TF scope for this op (e.g 'training-input').
             feature_mapping_fn: A function which maps `FeatureInfo` to `FixedLenFeature` or
                 `VarLenFeature` values. Default maps all features to
                 tf.FixedLenFeature((), feature_info.type, default_value=0).
+            mk_iterator_fn: `Dataset` iterator to use. By default `make_one_shot_iterator()` is
+                used.
 
         Returns:
-            A `Dataset` that should be used for training purposes and a `DatasetContext` object.
+            A `Dataset` iterator that should be used for training purposes and a `DatasetContext`
+            object.
         """
         with tf.name_scope(scope):
             dataset, context = cls._get_featran_example_dataset(data_dir,
                                                                 feature_mapping_fn)
-            return cls._mk_one_shot_iterator(dataset), context
+            if FLAGS.shuffle_buffer_size > 0:
+                dataset = dataset.shuffle(FLAGS.shuffle_buffer_size)
+
+            if FLAGS.batch_size > 0:
+                dataset = dataset.batch(FLAGS.batch_size)
+
+            dataset = dataset.take(FLAGS.take_count)
+
+            if FLAGS.prefetch_buffer_size > 0:
+                dataset = dataset.prefetch(FLAGS.prefetch_buffer_size)
+
+            mk_iterator_fn = mk_iterator_fn or cls._mk_one_shot_iterator
+            return mk_iterator_fn(dataset), context
 
     @staticmethod
     def _mk_one_shot_iterator(dataset):
-        if FLAGS.shuffle_buffer_size > 0:
-            dataset = dataset.shuffle(FLAGS.shuffle_buffer_size)
-
-        if FLAGS.batch_size > 0:
-            dataset = dataset.batch(FLAGS.batch_size)
-
-        dataset = dataset.take(FLAGS.take_count)
-
-        if FLAGS.prefetch_buffer_size > 0:
-            dataset = dataset.prefetch(FLAGS.prefetch_buffer_size)
-        # TODO(rav): evaluate the use of initializable iterator for more epochs?
-        iterator = dataset.make_one_shot_iterator()
-        return iterator
+        return dataset.make_one_shot_iterator()

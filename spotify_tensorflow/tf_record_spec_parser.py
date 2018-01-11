@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017 Spotify AB.
+# Copyright 2018 Spotify AB.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ class TfRecordSpecParser(object):
         tf_record_spec_path = cls.__get_tf_record_spec_path(tf_record_desc_path, dir_path)
         with file_io.FileIO(tf_record_spec_path, "r") as f:
             spec = json.load(f)
-        assert spec["version"] == 1
+        assert spec["version"] == 1, "TFRecordSpec parsing error: Unsupported version."
 
         # features types
         type_map = {
@@ -41,7 +41,7 @@ class TfRecordSpecParser(object):
         }
         feature_info = [FeatureInfo(fi["name"], type_map[fi["kind"]], fi["tags"])
                         for fi in spec["features"]]
-        assert len(feature_info) > 0
+        assert len(feature_info) > 0, "TFRecordSpec parsing error: No feature found."
 
         # groups by multispec
         multispec_feature_groups = []
