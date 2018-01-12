@@ -55,11 +55,15 @@ class Trainer(object):
                                     feature_mapping_fn,
                                     split_features_label_fn):
         def in_fn():
-            train_input_it = Datasets.mk_training_iter(training_data_dir, feature_mapping_fn)
+            train_input_it = Datasets.mk_iter(training_data_dir,
+                                              "evaluation-input",
+                                              feature_mapping_fn)
             return split_features_label_fn(train_input_it.get_next())
 
         def eval_fn():
-            eval_input_it = Datasets.mk_eval_iter(eval_data_dir, feature_mapping_fn)
+            eval_input_it = Datasets.mk_iter(eval_data_dir,
+                                             "training-input",
+                                             feature_mapping_fn)
             return split_features_label_fn(eval_input_it.get_next())
 
         def do_make_experiment(run_config, params):
