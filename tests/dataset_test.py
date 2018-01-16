@@ -24,6 +24,7 @@ import tensorflow as tf
 from tensorflow.core.example import example_pb2
 from tensorflow.core.example import feature_pb2
 from tensorflow.python.lib.io.tf_record import TFRecordWriter
+from spotify_tensorflow.dataframe_endpoint import DataFrameEndpoint
 from spotify_tensorflow.dataset import Datasets
 
 
@@ -57,7 +58,7 @@ class DataUtil(object):
 
 
 class SquareTest(tf.test.TestCase):
-    def testGetFeatranExampleDataset(self):
+    def test_get_featran_example_dataset(self):
         d, _, _ = DataUtil.write_featran_test_data()
         with self.test_session() as sess:
             dataset, c = Datasets._get_featran_example_dataset(d)
@@ -69,15 +70,46 @@ class SquareTest(tf.test.TestCase):
             with self.assertRaises(tf.errors.OutOfRangeError):
                 f1.eval()
 
-    def testMkIter(self):
-        test_dir = os.path.dirname(os.path.realpath(__file__))
-        it, context = Datasets.mk_iter(os.path.join(test_dir, "resources"))
+    test_resources_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "resources")
+    N_FEATURES = 31
+    N_POINTS = 815
+
+    def test_mk_iter(self):
+        it, context = Datasets.mk_iter(self.test_resources_dir)
         batch_it = it.get_next()
 
         with tf.Session() as sess:
             batch = sess.run(batch_it)
-            assert len(batch) == len(context.features), "Wrong number of features"
+            assert len(batch) == self.N_FEATURES, "Wrong number of features"
 
             first_feature = list(context.features.keys())[0]
             assert len(batch[first_feature]) == tf.flags.FLAGS.batch_size, "Wrongs number of " \
                                                                            "points in the batch "
+
+    def test_data_frame_read_dataset(self):
+        data = DataFrameEndpoint.read_dataset(self.test_resources_dir)
+        assert len(data) == self.N_POINTS
+
+    def test_data_frame_batch_iterator(self):
+        batch_size = 10
+        it = DataFrameEndpoint.batch_iterator(self.test_resources_dir, batch_size)
+        batches = [df for df in it]
+        total = 0
+        for df in batches[:-1]:
+            n, f = df.shape
+            assert n == batch_size
+            assert f == self.N_FEATURES
+            total += n
+        last_batch_len = len(batches[-1])
+        assert last_batch_len <= batch_size
+        assert (total + last_batch_len) == self.N_POINTS
+
+    def test_data_frame_unpack_multispec(self):
+        # dataset was saved using multispec: `val dataset = MultiFeatureSpec(features, label)`
+        X, Y = DataFrameEndpoint.read_dataset(self.test_resources_dir, unpack_multispec=True)
+        n_X, f_X = X.shape
+        assert n_X == self.N_POINTS
+        assert f_X == (self.N_FEATURES - 1)
+        n_Y, f_Y = Y.shape
+        assert n_Y == self.N_POINTS
+        assert f_Y == 1
