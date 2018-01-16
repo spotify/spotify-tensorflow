@@ -37,7 +37,6 @@ class DataFrameEndpoint(object):
     def read_dataset(cls, dataset_path,
                      take=sys.maxsize,
                      unpack_multispec=False,
-                     as_np=False,
                      feature_mapping_fn=None):
         """
         Read a TF dataset and load it into a Pandas DataFrame.
@@ -46,18 +45,16 @@ class DataFrameEndpoint(object):
         :param take: Number of records to read
         :param unpack_multispec: Returns an array of DataFrames, order is the same as the one used
         when building the MultiFeatureSpec in Featran
-        :param as_np: Return a numpy array (instead of a Pandas DataFrame)
         :param feature_mapping_fn: Override the TF record reading function
         :return: A Pandas DataFrame containing the dataset
         """
-        return six.next(cls.batch_iterator(dataset_path, take, unpack_multispec, as_np,
+        return six.next(cls.batch_iterator(dataset_path, take, unpack_multispec,
                                            feature_mapping_fn))
 
     @classmethod
     def batch_iterator(cls, dataset_path,
                        batch_size=10000,
                        unpack_multispec=False,
-                       as_np=False,
                        feature_mapping_fn=None):
         """
         Read a TF dataset in batches, each one yielded as a Pandas DataFrame.
@@ -66,20 +63,19 @@ class DataFrameEndpoint(object):
         :param batch_size: Size of each batches
         :param unpack_multispec: Returns an array of DataFrames, order is the same as the one used
         when building the MultiFeatureSpec in Featran
-        :param as_np: Return a numpy array (instead of a Pandas DataFrame)
         :param feature_mapping_fn: Override the TF record reading function
         :return: A Python Generator, yielding batches of data in a Pandas DataFrame
         """
         training_it, context = Datasets.mk_iter(dataset_path, feature_mapping_fn=feature_mapping_fn)
         groups = context.multispec_feature_groups if unpack_multispec else None
         for batch in cls.__DataFrameGenerator(training_it, batch_size):
-            yield cls.__format_df(batch, as_np, groups)
+            yield cls.__format_df(batch, groups)
 
     @staticmethod
-    def __format_df(df, as_np, multispec_feature_groups):
+    def __format_df(df, multispec_feature_groups):
         if not multispec_feature_groups:
-            return df.as_matrix() if as_np else df
-        return [df[f].as_matrix() if as_np else df[f] for f in multispec_feature_groups]
+            return df
+        return [df[f] for f in multispec_feature_groups]
 
     class __DataFrameGenerator(object):
         """
