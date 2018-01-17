@@ -55,15 +55,15 @@ class Trainer(object):
                                     feature_mapping_fn,
                                     split_features_label_fn):
         def in_fn():
-            train_input_it = Datasets.mk_iter(training_data_dir,
-                                              "evaluation-input",
-                                              feature_mapping_fn)
+            train_input_it, _ = Datasets.mk_iter(training_data_dir,
+                                                 "evaluation-input",
+                                                 feature_mapping_fn)
             return split_features_label_fn(train_input_it.get_next())
 
         def eval_fn():
-            eval_input_it = Datasets.mk_iter(eval_data_dir,
-                                             "training-input",
-                                             feature_mapping_fn)
+            eval_input_it, _ = Datasets.mk_iter(eval_data_dir,
+                                                "training-input",
+                                                feature_mapping_fn)
             return split_features_label_fn(eval_input_it.get_next())
 
         def do_make_experiment(run_config, params):
@@ -75,15 +75,16 @@ class Trainer(object):
         return do_make_experiment
 
     @staticmethod
-    def get_default_run_config():
+    def get_default_run_config(job_dir=FLAGS.job_dir):
         """Returns a default `RunConfig` for `Estimator`."""
         # this weird try/except is a static variable pattern in python
         # https://stackoverflow.com/questions/279561/what-is-the-python-equivalent-of-static-variables-inside-a-function/16214510#16214510
         try:
             return Trainer.get_default_run_config.default_config
         except AttributeError:
+            assert job_dir is not None, "Please pass a non None job_dir"
             Trainer.get_default_run_config.default_config = tf.contrib.learn.RunConfig(
-                model_dir=FLAGS.job_dir)
+                model_dir=job_dir)
             return Trainer.get_default_run_config.default_config
 
     @staticmethod
