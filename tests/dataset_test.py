@@ -18,6 +18,7 @@
 from __future__ import absolute_import, division, print_function
 
 import os
+import tempfile
 from os.path import join as pjoin
 
 import tensorflow as tf
@@ -26,6 +27,7 @@ from tensorflow.core.example import feature_pb2
 from tensorflow.python.lib.io.tf_record import TFRecordWriter
 from spotify_tensorflow.dataframe_endpoint import DataFrameEndpoint
 from spotify_tensorflow.dataset import Datasets
+from spotify_tensorflow.trainer import Trainer
 
 
 class DataUtil(object):
@@ -113,3 +115,26 @@ class SquareTest(tf.test.TestCase):
         n_Y, f_Y = Y.shape
         assert n_Y == self.N_POINTS
         assert f_Y == 1
+
+    def test_trainer_shouldnt_crash(self):
+        _, context = Datasets.mk_iter(
+            self.test_resources_dir)  # FIXME: should we expose the context directly?
+
+        (feature_names, label_names) = context.multispec_feature_groups
+        feature_columns = [tf.feature_column.numeric_column(name) for name in feature_names]
+
+        config = Trainer.get_default_run_config(job_dir=tempfile.mkdtemp())
+
+        estimator = tf.estimator.LinearClassifier(feature_columns=feature_columns,
+                                                  config=config)
+
+        def split_features_label_fn(parsed_features):
+            assert len(label_names) == 1
+            target = parsed_features.pop(label_names[0])
+            return parsed_features, target
+
+        Trainer.run(estimator,
+                    training_data_dir=self.test_resources_dir,
+                    eval_data_dir=self.test_resources_dir,
+                    split_features_label_fn=split_features_label_fn,
+                    run_config=config)
