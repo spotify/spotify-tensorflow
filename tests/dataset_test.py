@@ -118,6 +118,12 @@ class SquareTest(tf.test.TestCase):
         self.assertEqual(n_Y, self.N_POINTS)
         self.assertEqual(f_Y, self.N_Y)
 
+    def test_feature_order_mutlispec(self):
+        expected_features = ["f3", "f1", "f2_EVEN", "f2_ODD"]
+        _, context = Datasets.mk_iter(self.test_resources_dir)
+        feature_names, _ = context.multispec_feature_groups
+        self.assertEqual(feature_names, expected_features)
+
     def test_trainer_shouldnt_crash(self):
         _, context = Datasets.mk_iter(
             self.test_resources_dir)  # FIXME: should we expose the context directly?

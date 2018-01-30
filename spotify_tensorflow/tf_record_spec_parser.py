@@ -17,7 +17,7 @@
 #
 
 import json
-from collections import defaultdict, namedtuple
+from collections import OrderedDict, namedtuple
 
 import tensorflow as tf
 from tensorflow.python.lib.io import file_io
@@ -46,9 +46,12 @@ class TfRecordSpecParser(object):
         # groups by multispec
         multispec_feature_groups = []
         if "multispec-id" in feature_info[0][2]:
-            d = defaultdict(set)
+            d = OrderedDict()
             for name, _, tags in feature_info:
-                d[int(tags["multispec-id"])].add(name)
+                key = int(tags["multispec-id"])
+                if key not in d:
+                    d[key] = []
+                d[key].append(name)
             multispec_feature_groups = [None] * len(d)
             for i, f in d.items():
                 multispec_feature_groups[i] = list(f)
