@@ -20,7 +20,7 @@ from __future__ import absolute_import, division, print_function
 
 import json
 import os
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 from os.path import join as pjoin
 
 import tensorflow as tf
@@ -101,7 +101,7 @@ class Datasets(object):
     @staticmethod
     def _get_default_feature_mapping_fn(feature_info):
         fm = [(f.name, tf.FixedLenFeature((), f.kind, default_value=0)) for f in feature_info]
-        return dict(fm)
+        return OrderedDict(fm)
 
     @staticmethod
     def _try_enable_sharding(dataset):

@@ -1,0 +1,1 @@
+{"version":1,"features":[{"name":"f3","kind":"FloatList","tags":{"multispec-id":"0"}},{"name":"f1","kind":"FloatList","tags":{"multispec-id":"0"}},{"name":"f2_EVEN","kind":"FloatList","tags":{"multispec-id":"0"}},{"name":"f2_ODD","kind":"FloatList","tags":{"multispec-id":"0"}},{"name":"label","kind":"FloatList","tags":{"multispec-id":"1"}}],"compression":"UNCOMPRESSED"}

@@ -72,9 +72,12 @@ class SquareTest(tf.test.TestCase):
             with self.assertRaises(tf.errors.OutOfRangeError):
                 f1.eval()
 
-    test_resources_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "resources")
-    N_FEATURES = 31
-    N_POINTS = 815
+    test_resources_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                      "resources/tf-test-resource/tf-records/train")
+    N_FEATURES = 5
+    N_Y = 1
+    N_X = N_FEATURES - N_Y
+    N_POINTS = 918
 
     def test_mk_iter(self):
         it, context = Datasets.mk_iter(self.test_resources_dir)
@@ -82,15 +85,14 @@ class SquareTest(tf.test.TestCase):
 
         with tf.Session() as sess:
             batch = sess.run(batch_it)
-            assert len(batch) == self.N_FEATURES, "Wrong number of features"
+            self.assertEqual(len(batch), self.N_FEATURES)
 
             first_feature = list(context.features.keys())[0]
-            assert len(batch[first_feature]) == tf.flags.FLAGS.batch_size, "Wrongs number of " \
-                                                                           "points in the batch "
+            self.assertEqual(len(batch[first_feature]), tf.flags.FLAGS.batch_size)
 
     def test_data_frame_read_dataset(self):
         data = DataFrameEndpoint.read_dataset(self.test_resources_dir)
-        assert len(data) == self.N_POINTS
+        self.assertEqual(len(data), self.N_POINTS)
 
     def test_data_frame_batch_iterator(self):
         batch_size = 10
@@ -99,22 +101,28 @@ class SquareTest(tf.test.TestCase):
         total = 0
         for df in batches[:-1]:
             n, f = df.shape
-            assert n == batch_size
-            assert f == self.N_FEATURES
+            self.assertEqual(n, batch_size)
+            self.assertEqual(f, self.N_FEATURES)
             total += n
         last_batch_len = len(batches[-1])
-        assert last_batch_len <= batch_size
-        assert (total + last_batch_len) == self.N_POINTS
+        self.assertLessEqual(last_batch_len, batch_size)
+        self.assertEqual(total + last_batch_len, self.N_POINTS)
 
     def test_data_frame_unpack_multispec(self):
         # dataset was saved using multispec: `val dataset = MultiFeatureSpec(features, label)`
         X, Y = DataFrameEndpoint.read_dataset(self.test_resources_dir, unpack_multispec=True)
         n_X, f_X = X.shape
-        assert n_X == self.N_POINTS
-        assert f_X == (self.N_FEATURES - 1)
+        self.assertEqual(n_X, self.N_POINTS)
+        self.assertEqual(f_X, self.N_X)
         n_Y, f_Y = Y.shape
-        assert n_Y == self.N_POINTS
-        assert f_Y == 1
+        self.assertEqual(n_Y, self.N_POINTS)
+        self.assertEqual(f_Y, self.N_Y)
+
+    def test_feature_order_mutlispec(self):
+        expected_features = ["f3", "f1", "f2_EVEN", "f2_ODD"]
+        _, context = Datasets.mk_iter(self.test_resources_dir)
+        feature_names, _ = context.multispec_feature_groups
+        self.assertEqual(feature_names, expected_features)
 
     def test_trainer_shouldnt_crash(self):
         _, context = Datasets.mk_iter(
@@ -129,9 +137,9 @@ class SquareTest(tf.test.TestCase):
                                                   config=config)
 
         def split_features_label_fn(parsed_features):
-            assert len(label_names) == 1
-            target = parsed_features.pop(label_names[0])
-            return parsed_features, target
+            self.assertEqual(len(label_names),  1)
+            label = parsed_features.pop(label_names[0])
+            return parsed_features, label
 
         Trainer.run(estimator,
                     training_data_dir=self.test_resources_dir,
