@@ -18,17 +18,26 @@
 
 from __future__ import absolute_import, division, print_function
 
+import logging
+import sys
 import json
 import os
 from collections import namedtuple, OrderedDict
 from os.path import join as pjoin
+import timeit
 
+import six
+import numpy as np
+import pandas as pd
 import tensorflow as tf
 from tensorflow.python.lib.io import file_io
 
 from .tf_record_spec_parser import TfRecordSpecParser
 
 FLAGS = tf.flags.FLAGS
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class DatasetContext(namedtuple("DatasetContext", ["filenames",
@@ -158,3 +167,155 @@ class Datasets(object):
     @staticmethod
     def _mk_one_shot_iterator(dataset):
         return dataset.make_one_shot_iterator()
+
+    class __DictionaryEndpoint(object):
+        @classmethod
+        def read_dataset(cls, dataset_path, take=sys.maxsize, feature_mapping_fn=None):
+            """
+            Read a TF dataset and load it into a Dictionary of Numpy Arrays.
+
+            :param dataset_path: Path to the TF Records Dataset
+            :param take: Number of records to read
+            when building the MultiFeatureSpec in Featran
+            :param feature_mapping_fn: Override the TF record reading function
+            :return: A Dictionary containing the dataset
+            """
+            return six.next(cls.batch_iterator(dataset_path, take, feature_mapping_fn))
+
+        @classmethod
+        def batch_iterator(cls, dataset_path, batch_size=10000, feature_mapping_fn=None):
+            """
+            Read a TF dataset in batches, each one yielded as a Dictonary.
+
+            :param dataset_path: Path to the TF Records Dataset
+            :param batch_size: Size of each batches
+            when building the MultiFeatureSpec in Featran
+            :param feature_mapping_fn: Override the TF record reading function
+            :return: A Python Generator, yielding batches of data in a Dictionary
+            """
+            training_it, context = Datasets.mk_iter(
+                dataset_path,
+                feature_mapping_fn=feature_mapping_fn)
+
+            for batch in cls.__FeatureGenerator(training_it, batch_size, context):
+                yield batch
+
+        class __FeatureGenerator(object):
+            def __init__(self, training_it, batch_size, context):
+                self.batch_size = batch_size
+                self.batch_iter = training_it.get_next()
+                self.context = context
+                self.buff = None
+
+            def __iter__(self):
+                logger.info("Starting TF Session...")
+                with tf.Session() as sess:
+                    logger.info("Reading TFRecords...")
+                    while True:
+                        try:
+                            yield self._get_batch(sess)
+                        except tf.errors.OutOfRangeError:
+                            logger.info("End of dataset.")
+                            break
+                yield self.buff
+
+            def _get_buff_size(self):
+                if self.buff is None:
+                    return 0
+                else:
+                    return len(self.buff[list(self.buff.keys())[0]])
+
+            def _append(self, v1, v2):
+                if type(v1) is np.ndarray:
+                    if(v1.ndim == 1):
+                        return np.append(v1, v2)
+                    elif(v1.ndim == 2):
+                        return np.hstack([v1, v2])
+                    else:
+                        raise ValueError("Only 1 or 2 dimensional features are supported")
+                else:
+                    return v1.append(v2)
+
+            def _get_batch(self, sess):
+                if self.buff is None:
+                    self.buff = OrderedDict()
+                    first_result = sess.run(self.batch_iter)
+                    for k in self.context.features.keys():
+                        self.buff[k] = first_result[k]
+                while self._get_buff_size() < self.batch_size:
+                    t = timeit.default_timer()
+                    current_batch = sess.run(self.batch_iter)
+                    for k in self.context.features.keys():
+                        self.buff[k] = self._append(self.buff[k], current_batch[k])
+                    logger.info("Fetched %d / %s records (%4d TFExamples/s)" % (
+                        self._get_buff_size(),
+                        str(self.batch_size) if self.batch_size < sys.maxsize else "?",
+                        FLAGS.batch_size / (timeit.default_timer() - t)))
+                ret = OrderedDict()
+                for k in list(self.context.features.keys()):
+                    ret[k] = self.buff[k][:self.batch_size]
+                    self.buff[k] = self.buff[k][self.batch_size:]
+
+                return ret
+
+    dict = __DictionaryEndpoint()
+
+    class __DataFrameEndpoint(object):
+        @classmethod
+        def read_dataset(cls, dataset_path,
+                         take=sys.maxsize,
+                         unpack_multispec=False,
+                         feature_mapping_fn=None):
+            """
+            Read a TF dataset and load it into a Pandas DataFrame.
+
+            :param dataset_path: Path to the TF Records Dataset
+            :param take: Number of records to read
+            :param unpack_multispec: Returns an array of DataFrames, order is the same
+            when building the MultiFeatureSpec in Featran
+            :param feature_mapping_fn: Override the TF record reading function
+            :return: A Pandas DataFrame containing the dataset
+            """
+            return six.next(cls.batch_iterator(dataset_path, take, unpack_multispec,
+                                               feature_mapping_fn))
+
+        @classmethod
+        def batch_iterator(cls, dataset_path,
+                           batch_size=10000,
+                           unpack_multispec=False,
+                           feature_mapping_fn=None):
+            """
+            Read a TF dataset in batches, each one yielded as a Pandas DataFrame.
+
+            :param dataset_path: Path to the TF Records Dataset
+            :param batch_size: Size of each batches
+            :param unpack_multispec: Returns an array of DataFrames, order is the same
+            when building the MultiFeatureSpec in Featran
+            :param feature_mapping_fn: Override the TF record reading function
+            :return: A Python Generator, yielding batches of data in a Pandas DataFrame
+            """
+            training_it, context = Datasets.mk_iter(
+                dataset_path,
+                feature_mapping_fn=feature_mapping_fn)
+
+            groups = context.multispec_feature_groups if unpack_multispec else None
+            for batch in Datasets.dict.batch_iterator(dataset_path, batch_size, feature_mapping_fn):
+                yield cls.__format_df(batch, groups)
+
+        @staticmethod
+        def __format_df(batch, multispec_feature_groups):
+            df = pd.DataFrame(batch)
+            if not multispec_feature_groups:
+                print("TYPE", type(batch))
+                return df[list(batch.keys())]
+            return [df[f] for f in multispec_feature_groups]
+
+        @staticmethod
+        def __to_df(feature_dict):
+            ret = OrderedDict()
+            for k in feature_dict:
+                ret[k] = feature_dict[k].tolist()
+            print(ret)
+            return ret
+
+    dataframe = __DataFrameEndpoint()
