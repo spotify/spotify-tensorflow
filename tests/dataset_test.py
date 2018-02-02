@@ -25,7 +25,6 @@ import tensorflow as tf
 from tensorflow.core.example import example_pb2
 from tensorflow.core.example import feature_pb2
 from tensorflow.python.lib.io.tf_record import TFRecordWriter
-from spotify_tensorflow.dataframe_endpoint import DataFrameEndpoint
 from spotify_tensorflow.dataset import Datasets
 from spotify_tensorflow.trainer import Trainer
 
@@ -91,12 +90,17 @@ class SquareTest(tf.test.TestCase):
             self.assertEqual(len(batch[first_feature]), tf.flags.FLAGS.batch_size)
 
     def test_data_frame_read_dataset(self):
-        data = DataFrameEndpoint.read_dataset(self.test_resources_dir)
+        data = Datasets.dataframe.read_dataset(self.test_resources_dir)
         self.assertEqual(len(data), self.N_POINTS)
+
+    def test_data_frame_read_dataset_dictonary(self):
+        data = Datasets.dict.read_dataset(self.test_resources_dir)
+        self.assertEqual(len(data), self.N_FEATURES)
+        self.assertEqual(len(data["f1"]), self.N_POINTS)
 
     def test_data_frame_batch_iterator(self):
         batch_size = 10
-        it = DataFrameEndpoint.batch_iterator(self.test_resources_dir, batch_size)
+        it = Datasets.dataframe.batch_iterator(self.test_resources_dir, batch_size)
         batches = [df for df in it]
         total = 0
         for df in batches[:-1]:
@@ -110,7 +114,7 @@ class SquareTest(tf.test.TestCase):
 
     def test_data_frame_unpack_multispec(self):
         # dataset was saved using multispec: `val dataset = MultiFeatureSpec(features, label)`
-        X, Y = DataFrameEndpoint.read_dataset(self.test_resources_dir, unpack_multispec=True)
+        X, Y = Datasets.dataframe.read_dataset(self.test_resources_dir, unpack_multispec=True)
         n_X, f_X = X.shape
         self.assertEqual(n_X, self.N_POINTS)
         self.assertEqual(f_X, self.N_X)
@@ -118,7 +122,17 @@ class SquareTest(tf.test.TestCase):
         self.assertEqual(n_Y, self.N_POINTS)
         self.assertEqual(f_Y, self.N_Y)
 
-    def test_feature_order_mutlispec(self):
+    def test_feature_order_multispec_dataframe(self):
+        expected_features = ["f3", "f1", "f2_EVEN", "f2_ODD"]
+        df, _ = Datasets.dataframe.read_dataset(self.test_resources_dir, unpack_multispec=True)
+        self.assertEqual(list(df.columns.values), expected_features)
+
+    def test_feature_order_dataframe(self):
+        expected_features = ["f3", "f1", "f2_EVEN", "f2_ODD", "label"]
+        df = Datasets.dataframe.read_dataset(self.test_resources_dir)
+        self.assertEqual(list(df.columns.values), expected_features)
+
+    def test_feature_order_multispec(self):
         expected_features = ["f3", "f1", "f2_EVEN", "f2_ODD"]
         _, context = Datasets.mk_iter(self.test_resources_dir)
         feature_names, _ = context.multispec_feature_groups
