@@ -29,7 +29,7 @@ class FreezeGraph(object):
             session,
             input_graph_def,
             output_node_names,
-            variable_names_blacklist=['global_step']
+            variable_names_blacklist=["global_step"]
         )
 
         with tf.gfile.GFile(path, "wb") as f:
@@ -50,6 +50,6 @@ class FreezeGraph(object):
         :return: Path to the written graph
         """
         with tf.Session(graph=tf.Graph()) as sess:
-            saver = tf.train.import_meta_graph(checkpoint + '.meta', clear_devices=True)
+            saver = tf.train.import_meta_graph(checkpoint + ".meta", clear_devices=True)
             saver.restore(sess, checkpoint)
             return cls.freeze_graph_session(sess, path, network)
