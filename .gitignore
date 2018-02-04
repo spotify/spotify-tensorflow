@@ -12,3 +12,4 @@ target/
 *.swp
 AUTHORS
 ChangeLog
+.DS_Store
