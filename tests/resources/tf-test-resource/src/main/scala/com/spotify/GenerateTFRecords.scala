@@ -43,13 +43,16 @@ object GenerateTFRecords {
 
     val fs = MultiFeatureSpec(features, label)
       .extract(scP)
-    //
+    
     val (train, eval) = fs
       .featureValues[Example]
       .randomSplit(.9)
 
     train.saveAsTfExampleFile(args("output") + "/train", fs)
     eval.saveAsTfExampleFile(args("output") + "/eval", fs)
+
+    fs.featureSettings
+      .saveAsTextFile(args("output") + "/settings", numShards=1)
 
     sc.close().waitUntilFinish()
   }
