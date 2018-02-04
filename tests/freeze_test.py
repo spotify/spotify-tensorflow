@@ -19,7 +19,6 @@ import os
 import tempfile
 
 import tensorflow as tf
-
 from spotify_tensorflow.freeze_graph import FreezeGraph
 
 
