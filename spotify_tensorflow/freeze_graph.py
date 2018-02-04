@@ -27,7 +27,7 @@ logger.setLevel(logging.INFO)
 class FreezeGraph(object):
 
     @classmethod
-    def freeze_graph_session(session, path, network):
+    def session(cls, session, path, network):
         """
         Freeze a graph by taking a session and a network and storing
         the results into a pb file at the given path. This function wil convert
@@ -56,7 +56,7 @@ class FreezeGraph(object):
         return path
 
     @classmethod
-    def freeze_graph_checkpoint(cls, checkpoint, path, network):
+    def checkpoint(cls, checkpoint, path, network):
         """
         Freeze a graph by taking a checkpoint and a network and storing
         the results into a pb file at the given path. This function wil convert
@@ -70,4 +70,4 @@ class FreezeGraph(object):
         with tf.Session(graph=tf.Graph()) as sess:
             saver = tf.train.import_meta_graph(checkpoint + ".meta", clear_devices=True)
             saver.restore(sess, checkpoint)
-            return cls.freeze_graph_session(sess, path, network)
+            return cls.session(sess, path, network)
