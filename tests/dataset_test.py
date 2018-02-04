@@ -77,7 +77,7 @@ class SquareTest(tf.test.TestCase):
     N_FEATURES = 5
     N_Y = 1
     N_X = N_FEATURES - N_Y
-    N_POINTS = 918
+    N_POINTS = 1817
 
     def test_mk_iter(self):
         it, context = Datasets.mk_iter(self.test_resources_dir)
