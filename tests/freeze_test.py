@@ -40,7 +40,7 @@ class FreezeTest(tf.test.TestCase):
 
     def test_read_freeze_session(self):
         with self.test_session():
-            with gfile.FastGFile(self.output_file, 'rb') as f:
+            with gfile.FastGFile(self.output_file, "rb") as f:
                 graph_def = tf.GraphDef()
                 graph_def.ParseFromString(f.read())
                 tf.import_graph_def(graph_def)
