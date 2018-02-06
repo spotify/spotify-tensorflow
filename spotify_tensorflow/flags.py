@@ -67,7 +67,7 @@ class Flags(object):
         flags.DEFINE_string("training_set", None,
                             "Location of the training set")
 
-        flags.DEFINE_string("job-dir", None,
+        flags.DEFINE_string("job_dir", None,
                             "Where to write data")
 
     @staticmethod
