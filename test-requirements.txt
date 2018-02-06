@@ -1,4 +1,4 @@
-tensorflow==1.4.0
+tensorflow==1.5.0
 coverage
 flake8>=3.4.1
 flake8-quotes>=0.12.0
