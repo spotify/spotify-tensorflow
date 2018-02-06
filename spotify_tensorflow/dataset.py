@@ -230,7 +230,7 @@ class Datasets(object):
                     if(v1.ndim == 1):
                         return np.append(v1, v2)
                     elif(v1.ndim == 2):
-                        return np.hstack([v1, v2])
+                        return np.vstack([v1, v2])
                     else:
                         raise ValueError("Only 1 or 2 dimensional features are supported")
                 else:
