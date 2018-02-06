@@ -17,8 +17,10 @@
 #
 
 import logging
+import timeit
 
 import tensorflow as tf
+from tensorflow.python.lib.io import file_io
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -35,13 +37,23 @@ class FreezeGraph(object):
 
         :param session: TF Session
         :param path: Where the graph will be written
-        :param network: Tensor representing a network(Usually a prediction)
+        :param network: Tensor, Operation name, or list of Operation names
         :return: Path to the written graph
         """
         input_graph_def = tf.get_default_graph().as_graph_def()
 
-        logger.info("Freezing model")
-        output_node_names = [t.op.name for t in [network]]
+        time = timeit.default_timer()
+        logger.info("Freezing model at {}".format(time))
+
+        output_node_names = None
+        if type(network) == tf.Tensor:
+            output_node_names = [t.op.name for t in [network]]
+        elif type(network) == str:
+            output_node_names = [network]
+        elif type(network) == list:
+            output_node_names = network
+        else:
+            raise ValueError("Network must be a Tensor, String or List of Strings")
 
         output_graph_def = tf.graph_util.convert_variables_to_constants(
             session,
@@ -50,8 +62,9 @@ class FreezeGraph(object):
             variable_names_blacklist=["global_step"]
         )
 
-        with tf.gfile.GFile(path, "wb") as f:
-            f.write(output_graph_def.SerializeToString())
+        file_io.write_string_to_file(path, output_graph_def.SerializeToString())
+
+        logger.info("Froze graph in %4d seconds" % (timeit.default_timer() - time))
 
         return path
 
@@ -59,12 +72,12 @@ class FreezeGraph(object):
     def checkpoint(cls, checkpoint, path, network):
         """
         Freeze a graph by taking a checkpoint and a network and storing
-        the results into a pb file at the given path. This function wil convert
+        the results into a pb file at the given path. This function will convert
         variables to constants which is necessary for JVM serving.
 
         :param checkpoint: Path to a local checkpoint file
         :param path: Where the graph will be written
-        :param network: Tensor representing a network(Usually a prediction)
+        :param network: Tensor, Operation name, or list of Operation names
         :return: Path to the written graph
         """
         with tf.Session(graph=tf.Graph()) as sess:
