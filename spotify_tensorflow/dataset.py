@@ -236,7 +236,7 @@ class Datasets(object):
                 elif type(v1) is tf.SparseTensorValue:
                     v1_tensor = tf.SparseTensor.from_value(v1)
                     v2_tensor = tf.SparseTensor.from_value(v2)
-                    return tf.sparse_concat(axis=1, sp_inputs=[v1_tensor, v2_tensor]).eval()
+                    return tf.sparse_concat(axis=0, sp_inputs=[v1_tensor, v2_tensor]).eval()
                 else:
                     return v1.append(v2)
 
