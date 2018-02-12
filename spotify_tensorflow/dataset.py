@@ -306,7 +306,6 @@ class Datasets(object):
         def __format_df(batch, multispec_feature_groups):
             df = pd.DataFrame(batch)
             if not multispec_feature_groups:
-                print("TYPE", type(batch))
                 return df[list(batch.keys())]
             return [df[f] for f in multispec_feature_groups]
 
