@@ -34,6 +34,8 @@ from tensorflow.python.lib.io import file_io
 
 from .tf_record_spec_parser import TfRecordSpecParser
 
+__all__ = ["Datasets"]
+
 FLAGS = tf.flags.FLAGS
 
 logger = logging.getLogger(__name__)

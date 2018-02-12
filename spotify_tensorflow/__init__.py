@@ -20,3 +20,8 @@ from __future__ import absolute_import, division, print_function
 
 # make our internal flags are propagated into TF flags
 from . import flags  # noqa: F401
+from .dataset import Datasets
+from .trainer import Trainer
+
+__all__ = ["Datasets",
+           "Trainer"]
