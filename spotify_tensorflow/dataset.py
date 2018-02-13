@@ -128,6 +128,28 @@ class Datasets(object):
         return dataset
 
     @classmethod
+    def get_context(cls, dir_path, feature_mapping_fn=None, tf_record_spec_path=None):
+        """Return Featran's record spec context.
+
+        Args:
+            dir_path: Directory path containing features.
+            feature_mapping_fn: A function which maps feature names to `FixedLenFeature` or
+                `VarLenFeature` values. Default maps all features to
+                tf.FixedLenFeature((), tf.int64, default_value=0).
+            tf_record_spec_path: Filepath to feature description file. Default is
+                `_tf_record_spec.json` inside `dir_path`.
+
+        Returns:
+            Returns `DatasetContext` (see doc of `DatasetContext`) for given dataset.
+        """
+        filenames = cls._get_tfrecord_filenames(dir_path)
+        feature_info, _, feature_groups = TfRecordSpecParser.parse_tf_record_spec(
+                tf_record_spec_path, dir_path)
+        feature_mapping_fn = feature_mapping_fn or cls._get_default_feature_mapping_fn
+        features = feature_mapping_fn(feature_info)
+        return DatasetContext(filenames, features, feature_groups)
+
+    @classmethod
     def mk_iter(cls, data_dir,
                 scope="tfrecords_iter",
                 feature_mapping_fn=None,

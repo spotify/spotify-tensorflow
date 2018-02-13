@@ -139,9 +139,7 @@ class SquareTest(tf.test.TestCase):
         self.assertEqual(feature_names, expected_features)
 
     def test_trainer_shouldnt_crash(self):
-        _, context = Datasets.mk_iter(
-            self.test_resources_dir)  # FIXME: should we expose the context directly?
-
+        context = Datasets.get_context(self.test_resources_dir)
         (feature_names, label_names) = context.multispec_feature_groups
         feature_columns = [tf.feature_column.numeric_column(name) for name in feature_names]
 
