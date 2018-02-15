@@ -257,6 +257,10 @@ class Datasets(object):
                         return np.vstack([v1, v2])
                     else:
                         raise ValueError("Only 1 or 2 dimensional features are supported")
+                elif type(v1) is tf.SparseTensorValue:
+                    v1_tensor = tf.SparseTensor.from_value(v1)
+                    v2_tensor = tf.SparseTensor.from_value(v2)
+                    return tf.sparse_concat(axis=0, sp_inputs=[v1_tensor, v2_tensor]).eval()
                 else:
                     return v1.append(v2)
 
@@ -338,7 +342,6 @@ class Datasets(object):
             ret = OrderedDict()
             for k in feature_dict:
                 ret[k] = feature_dict[k].tolist()
-            print(ret)
             return ret
 
     dataframe = __DataFrameEndpoint()
