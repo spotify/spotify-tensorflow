@@ -17,32 +17,32 @@ jobs:
       - run:
           name: Install Dependencies
           command: |
-            python3 -m venv venv
-            . venv/bin/activate
+            python3 -m venv venv_py3
+            . venv_py3/bin/activate
             pip install -r requirements.txt
             pip install -r test-requirements.txt
 
       - save_cache:
           paths:
-            - ./venv
+            - ./venv_py3
           key: v1-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "test-requirements.txt" }}
         
       - run:
           name: Run Tests
           command: |
-            . venv/bin/activate
+            . venv_py3/bin/activate
             nosetests tests
 
       - run:
           name: Run Examples
           command: |
-            . venv/bin/activate
+            . venv_py3/bin/activate
             ./scripts/run_examples.sh
 
       - run:
           name: Check style
           command: |
-            . venv/bin/activate
+            . venv_py3/bin/activate
             flake8
 
       - store_artifacts:
@@ -52,7 +52,7 @@ jobs:
       - run:
           name: Upload Coverage
           command: |
-            . venv/bin/activate
+            . venv_py3/bin/activate
             codecov
   test-python2:
     docker:
@@ -73,6 +73,7 @@ jobs:
           command: |
             virtualenv venv
             . venv/bin/activate
+            pip install --upgrade pip
             pip install -r requirements.txt
             pip install -r test-requirements.txt
 
