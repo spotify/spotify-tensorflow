@@ -23,8 +23,6 @@ import tensorflow as tf
 
 from .dataset import Datasets
 
-__all__ = ["Trainer"]
-
 FLAGS = tf.flags.FLAGS
 
 
