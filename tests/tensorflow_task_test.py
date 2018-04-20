@@ -18,10 +18,6 @@
 from __future__ import absolute_import, division, print_function
 
 from unittest import TestCase
-try:
-    from unittest.mock import patch  # For python >= 3.3
-except ImportError:
-    from mock import patch
 
 import luigi
 from luigi.contrib.gcs import GCSTarget
@@ -55,48 +51,45 @@ class DummyTask(TensorFlowTask):
 class TensorflowTaskTest(TestCase):
 
     def test_local_task(self):
-        with patch.object(TensorFlowTask,
-                          "_get_package_path",
-                          return_value="/path/to/package"):
-            task = DummyTask(cloud=False, job_dir="/local/job/dir")
-            expected = [
-                "gcloud ml-engine local train",
-                "--package-path=/path/to/package",
-                "--module-name=models.my_tf_model",
-                "--",
-                "--training-data=gs://training/data",
-                "--job-dir=/local/job/dir",
-                "--arg1=foo",
-                "--arg2=bar"
-            ]
-            self.assertEquals(task._mk_cmd(), " ".join(expected))
+        task = DummyTask(cloud=False,
+                         job_dir="/local/job/dir",
+                         model_package_path="/path/to/package")
+        expected = [
+            "gcloud ml-engine local train",
+            "--package-path=/path/to/package",
+            "--module-name=models.my_tf_model",
+            "--",
+            "--training-data=gs://training/data",
+            "--job-dir=/local/job/dir",
+            "--arg1=foo",
+            "--arg2=bar"
+        ]
+        self.assertEquals(task._mk_cmd(), " ".join(expected))
 
     def test_cloud_task(self):
-        with patch.object(TensorFlowTask,
-                          "_get_package_path",
-                          return_value="/path/to/package"):
-            task = DummyTask(cloud=True,
-                             job_dir="gs://job/dir",
-                             ml_engine_conf="/path/conf.yaml",
-                             blocking=False,
-                             tf_debug=True)
-            expected = [
-                "gcloud", "ml-engine",
-                "--project=project-1",
-                "jobs", "submit", "training",
-                ".*_DummyTask_.*",
-                "--region=europe-west1",
-                "--config=/path/conf.yaml",
-                "--job-dir=gs://job/dir",
-                "--package-path=/path/to/package",
-                "--module-name=models.my_tf_model",
-                "--verbosity=debug",
-                "--",
-                "--training-data=gs://training/data",
-                "--arg1=foo",
-                "--arg2=bar"
-            ]
-            actual = task._mk_cmd().split(" ")
-            self.assertEquals(actual[:6], expected[:6])
-            self.assertRegexpMatches(actual[6], expected[6])
-            self.assertEquals(actual[7:], expected[7:])
+        task = DummyTask(cloud=True,
+                         model_package_path="/path/to/package",
+                         job_dir="gs://job/dir",
+                         ml_engine_conf="/path/conf.yaml",
+                         blocking=False,
+                         tf_debug=True)
+        expected = [
+            "gcloud", "ml-engine",
+            "--project=project-1",
+            "jobs", "submit", "training",
+            ".*_DummyTask_.*",
+            "--region=europe-west1",
+            "--config=/path/conf.yaml",
+            "--job-dir=gs://job/dir",
+            "--package-path=/path/to/package",
+            "--module-name=models.my_tf_model",
+            "--verbosity=debug",
+            "--",
+            "--training-data=gs://training/data",
+            "--arg1=foo",
+            "--arg2=bar"
+        ]
+        actual = task._mk_cmd().split(" ")
+        self.assertEquals(actual[:6], expected[:6])
+        self.assertRegexpMatches(actual[6], expected[6])
+        self.assertEquals(actual[7:], expected[7:])
