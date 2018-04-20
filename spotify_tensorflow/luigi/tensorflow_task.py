@@ -160,6 +160,8 @@ class TensorFlowTask(luigi.Task):
         job_input = self.input()
         if isinstance(job_input, luigi.Target):
             job_input = {"input": job_input}
+        if len(job_input) == 0:  # default requires()
+            return []
         if not isinstance(job_input, dict):
             raise ValueError("Input (requires()) must be dict type")
         input_args = []
