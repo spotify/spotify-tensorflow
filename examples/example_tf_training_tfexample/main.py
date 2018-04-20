@@ -16,7 +16,8 @@
 # under the License.
 #
 
-from spotify_tensorflow import Datasets, Trainer
+from spotify_tensorflow.dataset import Datasets
+from spotify_tensorflow.trainer import Trainer
 import tensorflow as tf
 
 tf.logging.set_verbosity(tf.logging.INFO)
