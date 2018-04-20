@@ -19,7 +19,7 @@
 
 from __future__ import absolute_import, division, print_function
 
-from spotify_tensorflow import Datasets
+from spotify_tensorflow.dataset import Datasets
 
 
 def main():
