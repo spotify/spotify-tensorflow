@@ -50,10 +50,10 @@ class TensorFlowTask(luigi.Task):
     """
 
     # Task properties
-    model_package = None
-    model_name = None
-    gcp_project = None
-    region = None
+    model_package = luigi.Parameter(description="Python package (from path) containing your model")
+    model_name = luigi.Parameter(description="Name of the python model file", default=None)
+    gcp_project = luigi.Parameter(description="GCP project", default=None)
+    region = luigi.Parameter(description="GCP region", default=None)
     model_name_suffix = None
 
     # Task parameters
