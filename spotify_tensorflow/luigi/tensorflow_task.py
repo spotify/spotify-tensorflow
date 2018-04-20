@@ -50,8 +50,11 @@ class TensorFlowTask(luigi.Task):
     """
 
     # Task properties
-    model_package = luigi.Parameter(description="Python package (from path) containing your model")
-    model_name = luigi.Parameter(description="Name of the python model file", default=None)
+    model_name = luigi.Parameter(description="Name of the python model file")
+    model_package = luigi.Parameter(description="Python package containing your model",
+                                    default=None)
+    model_package_path = luigi.Parameter(description="Absolute path to the model package",
+                                         default=None)
     gcp_project = luigi.Parameter(description="GCP project", default=None)
     region = luigi.Parameter(description="GCP region", default=None)
     model_name_suffix = None
@@ -138,15 +141,15 @@ class TensorFlowTask(luigi.Task):
 
     def _get_model_args(self):
         args = []
-        if self.model_package:
-            args.append("--package-path=%s" % self._get_package_path())
+        if self.model_package_path:
+            args.append("--package-path=%s" % self.model_package_path)
         if self.model_name:
-            args.append("--module-name={package}.{module}".format(package=self.model_package,
-                                                                  module=self.model_name))
+            module_name = self.model_name
+            if self.model_package:
+                module_name = "{package}.{module}".format(package=self.model_package,
+                                                          module=module_name)
+            args.append("--module-name=" + module_name)
         return args
-
-    def _get_package_path(self):
-        return "/".join(__import__(self.model_package).__file__.split("/")[:-1])
 
     def _get_job_args(self):
         args = ["--"]
