@@ -51,13 +51,13 @@ class TensorFlowTask(luigi.Task):
 
     # Task properties
     model_name = luigi.Parameter(description="Name of the python model file")
-    model_package = luigi.Parameter(description="Python package containing your model",
-                                    default=None)
-    model_package_path = luigi.Parameter(description="Absolute path to the model package",
-                                         default=None)
+    model_package = luigi.Parameter(description="Python package containing your model")
+    model_package_path = luigi.Parameter(description="Absolute path to the model package")
     gcp_project = luigi.Parameter(description="GCP project", default=None)
     region = luigi.Parameter(description="GCP region", default=None)
-    model_name_suffix = None
+    model_name_suffix = luigi.Parameter(description="String which will be appended to the job"
+                                                    " name. Useful for finding jobs in the"
+                                                    " ml-engine UI.", default=None)
 
     # Task parameters
     cloud = luigi.BoolParameter(description="Run on ml-engine")
