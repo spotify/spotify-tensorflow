@@ -134,7 +134,7 @@ class TensorFlowTask(luigi.Task):
             params.append("--region=%s" % self.region)
         if self.ml_engine_conf:
             params.append("--config=%s" % self.ml_engine_conf)
-        params.append("--job-dir=%s" % self.get_job_dir())
+        params.append("--job_dir=%s" % self.get_job_dir())
         if self.blocking:
             params.append("--stream-logs")  # makes the execution "blocking"
         return params
@@ -155,7 +155,7 @@ class TensorFlowTask(luigi.Task):
         args = ["--"]
         args.extend(self._get_input_args())
         if not self.cloud:
-            args.append("--job-dir=%s" % self.get_job_dir())
+            args.append("--job_dir=%s" % self.get_job_dir())
         args.extend(self.tf_task_args())
         return args
 
