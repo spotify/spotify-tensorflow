@@ -13,3 +13,4 @@ target/
 AUTHORS
 ChangeLog
 .DS_Store
+.mypy_cache

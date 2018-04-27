@@ -1,3 +1,4 @@
 six==1.11.0
 pandas==0.22.0
 numpy==1.14.0
+typing==3.6.4
