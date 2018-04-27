@@ -20,6 +20,7 @@ from __future__ import absolute_import, division, print_function
 
 import datetime
 import logging
+from typing import Dict  # noqa: F401
 
 import luigi
 from six.moves import xrange
@@ -40,7 +41,7 @@ class ExternalDailySnapshot(luigi.ExternalTask):
     lookback size. Example: ServiceLogs.latest(service="radio", lookback=21)
     """
     date = luigi.DateParameter()
-    __cache = []
+    __cache = []  # type: ignore
 
     @classmethod
     def latest(cls, *args, **kwargs):

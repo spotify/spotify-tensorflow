@@ -15,12 +15,36 @@
 #  KIND, either express or implied.  See the License for the
 #  specific language governing permissions and limitations
 #  under the License.
+try:
+    from setuptools import setup
+    from setuptools.command.test import test as TestCommand
+except ImportError:
+    from distutils.core import setup
+    from distutils.cmd import Command as TestCommand
 
-from setuptools import setup
+import sys
 
 
-setup(
-    setup_requires=["pbr>=1.3",
-                    "nose>=1.3.7"],
-    pbr=True
-)
+class tox(TestCommand):
+    description = "run tox tests"
+    user_options = [("tox-args=", None, "Arguments to pass to tox")]
+
+    def initialize_options(self):
+        TestCommand.initialize_options(self)
+        self.tox_args = ""
+
+    def finalize_options(self):
+        TestCommand.finalize_options(self)
+        self.test_args = []
+        self.test_suite = True
+
+    def run_tests(self):
+        import os
+        os.chdir(os.path.dirname(os.path.realpath(__file__)))
+        # import here, cause outside the eggs aren't loaded
+        import tox
+        errno = tox.cmdline(args=self.tox_args.split())
+        sys.exit(errno)
+
+
+setup(pbr=True)
