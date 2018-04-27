@@ -60,7 +60,7 @@ class TensorflowTaskTest(TestCase):
             "--module-name=models.my_tf_model",
             "--",
             "--training-data=gs://training/data",
-            "--job-dir=/local/job/dir",
+            "--job_dir=/local/job/dir",
             "--arg1=foo",
             "--arg2=bar"
         ]
@@ -80,7 +80,7 @@ class TensorflowTaskTest(TestCase):
             ".*_DummyTask_.*",
             "--region=europe-west1",
             "--config=/path/conf.yaml",
-            "--job-dir=gs://job/dir",
+            "--job_dir=gs://job/dir",
             "--package-path=/path/to/package",
             "--module-name=models.my_tf_model",
             "--verbosity=debug",
