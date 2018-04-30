@@ -18,6 +18,7 @@
 
 import logging
 import timeit
+from typing import Union, List  # noqa: F401
 
 import tensorflow as tf
 from tensorflow.python.lib.io import file_io
@@ -29,18 +30,23 @@ logger.setLevel(logging.INFO)
 class FreezeGraph(object):
     """
     This API is discouraged - please use Estimator API and saved model, please read the
-    `official doc <https://www.tensorflow.org/programmers_guide/saved_model#using_savedmodel_with_estimators`_.
+    `official doc <https://www.tensorflow.org/programmers_guide/saved_model#using_savedmodel_with_estimators`_.  # noqa: E501
     """
 
     @classmethod
-    def session(cls, session, path, network):
+    def session(cls,
+                session,  # type: tf.Session
+                path,  # type: str
+                network  # type: Union[tf.Tensor, str, List[str]]
+                ):
+        # type: (...) -> str
         """
         Freeze a graph by taking a session and a network and storing
         the results into a pb file at the given path. This function wil convert
         variables to constants which is necessary for JVM serving.
 
         :param session: TF Session
-        :param path: Where the graph will be written
+        :param path: Where the graph will be written, this can be local filesystem or GCS
         :param network: Tensor, Operation name, or list of Operation names
         :return: Path to the written graph
         """
@@ -49,12 +55,11 @@ class FreezeGraph(object):
         time = timeit.default_timer()
         logger.info("Freezing model at {}".format(time))
 
-        output_node_names = None
-        if type(network) == tf.Tensor:
+        if isinstance(network, tf.Tensor):
             output_node_names = [t.op.name for t in [network]]
-        elif type(network) == str:
+        elif isinstance(network, str):
             output_node_names = [network]
-        elif type(network) == list:
+        elif isinstance(network, list):
             output_node_names = network
         else:
             raise ValueError("Network must be a Tensor, String or List of Strings")
@@ -66,21 +71,32 @@ class FreezeGraph(object):
             variable_names_blacklist=["global_step"]
         )
 
-        file_io.write_string_to_file(path, output_graph_def.SerializeToString())
+        if FreezeGraph.__is_gcs(path):
+            import tempfile
+            local_path = tempfile.mktemp("local_temp_graph")
+            file_io.write_string_to_file(local_path, output_graph_def.SerializeToString())
+            file_io.copy(local_path, path, overwrite=True)
+        else:
+            file_io.write_string_to_file(path, output_graph_def.SerializeToString())
 
         logger.info("Froze graph in %4d seconds" % (timeit.default_timer() - time))
 
         return path
 
     @classmethod
-    def checkpoint(cls, checkpoint, path, network):
+    def checkpoint(cls,
+                   checkpoint,  # type: str
+                   path,  # type: str
+                   network  # type: Union[tf.Tensor, str, List[str]]
+                   ):
+        # type: (...) -> str
         """
         Freeze a graph by taking a checkpoint and a network and storing
         the results into a pb file at the given path. This function will convert
         variables to constants which is necessary for JVM serving.
 
         :param checkpoint: Path to a local checkpoint file
-        :param path: Where the graph will be written
+        :param path: Where the graph will be written, this can be local filesystem or GCS
         :param network: Tensor, Operation name, or list of Operation names
         :return: Path to the written graph
         """
@@ -88,3 +104,9 @@ class FreezeGraph(object):
             saver = tf.train.import_meta_graph(checkpoint + ".meta", clear_devices=True)
             saver.restore(sess, checkpoint)
             return cls.session(sess, path, network)
+
+    @staticmethod
+    def __is_gcs(path):
+        # type: (str) -> bool
+        """Check if path is GCS object."""
+        return path.lower().startswith("gs://")
