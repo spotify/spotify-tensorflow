@@ -37,5 +37,7 @@ class BigQueryDailySnapshot(ExternalDailySnapshot):
 
 
 def table_str(bq_target):
+    # type: (BigqueryTarget) -> str
+    """Given a BigqueryTarget returns a string table reference."""
     t = bq_target.table
     return "%s.%s.%s" % (t.project_id, t.dataset_id, t.table_id)

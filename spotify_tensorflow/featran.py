@@ -18,6 +18,7 @@
 
 import json
 from os.path import join as pjoin
+from typing import Callable, List, Dict, Any, Union  # noqa: F401
 
 from tensorflow.python.lib.io import file_io
 
@@ -26,25 +27,28 @@ class Featran(object):
 
     @classmethod
     def settings(cls, settings_dir, settings_filename=None):
+        # type: (str, str) -> List[Dict[str, Any]]
         """
         Read a Featran settings file and return a list of settings
 
-        :param settings_path: Path to the Featran Settings JSON Directory
+        :param settings_dir: Path to the directory containing the settings file
+        :param settings_filename: Filename of the Featran Settings JSON file
         :return: A List of Featran Settings
         """
-        file = cls.__get_featran_settings_file(settings_dir)
-        with file_io.FileIO(file, "r") as f:
-            settings = json.load(f)
+        f = cls.__get_featran_settings_file(settings_dir, settings_filename)
+        with file_io.FileIO(f, "r") as fio:
+            settings = json.load(fio)
         return settings
 
     @classmethod
     def names(cls, settings_path, feature_splitter_fn=None):
+        # type: (str, Callable[[Any], str]) -> Union[List[str], Dict[str, List[str]]]
         """
         Returns a list of Featran feature names.  Optionally the list of names
         can be split into a dictionary keyed by the feature_splitter_fn
 
         :param settings_path: Path to the Featran Settings JSON Directory
-        :param feature_splitter_fn: Function to split feature name into a keyed dictonary
+        :param feature_splitter_fn: Function to split feature name into a keyed dictionary
         :return: A List or dictionary of Featran Feature names
         """
         settings = cls.settings(settings_path)
@@ -55,6 +59,7 @@ class Featran(object):
 
     @staticmethod
     def __get_featran_settings_file(dir_path, settings_filename=None):
+        # type: (str, str) -> str
         filename = settings_filename if settings_filename else "part-00000-of-00001.txt"
         filepath = pjoin(dir_path, filename)
         assert file_io.file_exists(filepath), "settings file `%s` does not exist" % filepath
@@ -62,8 +67,9 @@ class Featran(object):
 
     @staticmethod
     def __split_names(settings, feature_splitter_fn):
+        # type: (List[Dict[str, Any]], Callable[[Any], str]) -> Dict[str, List[str]]
         from collections import defaultdict
-        feature_names = defaultdict(list)
+        feature_names = defaultdict(list)  # type: Dict[str, List[str]]
         for setting in settings:
             key = feature_splitter_fn(setting["name"])
             for name in setting["featureNames"]:
@@ -72,6 +78,7 @@ class Featran(object):
 
     @staticmethod
     def __all_names(settings):
+        # type: (List[Dict[str, Any]]) -> List[str]
         feature_names = []
         for setting in settings:
             for name in setting["featureNames"]:

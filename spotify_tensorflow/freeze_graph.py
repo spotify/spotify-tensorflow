@@ -109,4 +109,4 @@ class FreezeGraph(object):
     def __is_gcs(path):
         # type: (str) -> bool
         """Check if path is GCS object."""
-        return path.lower().startswith("gs://")
+        return path.strip().lower().startswith("gs://")

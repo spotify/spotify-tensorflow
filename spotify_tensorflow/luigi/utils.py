@@ -22,11 +22,13 @@ import re
 
 
 def to_snake_case(s, sep="_"):
+    # type: (str, str) -> str
     p = r"\1" + sep + r"\2"
     s1 = re.sub("(.)([A-Z][a-z]+)", p, s)
     return re.sub("([a-z0-9])([A-Z])", p, s1).lower()
 
 
 def is_gcs_path(path):
+    # type: (str) -> bool
     """Returns True if given path is GCS path, False otherwise."""
-    return True if path.strip().startswith("gs://") else False
+    return path.strip().lower().startswith("gs://")
