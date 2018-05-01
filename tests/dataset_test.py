@@ -87,7 +87,7 @@ class SquareTest(tf.test.TestCase):
             self.assertEqual(len(batch), self.N_FEATURES)
 
             first_feature = list(context.features.keys())[0]
-            self.assertEqual(len(batch[first_feature]), tf.flags.FLAGS.batch_size)
+            self.assertEqual(len(batch[first_feature]), tf.flags.FLAGS["batch-size"].value)
 
     def test_data_frame_read_dataset(self):
         data = Datasets.dataframe.read_dataset(self.test_resources_dir)

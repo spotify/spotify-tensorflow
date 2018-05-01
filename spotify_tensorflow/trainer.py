@@ -23,7 +23,7 @@ import tensorflow as tf
 
 from .dataset import Datasets
 
-FLAGS = tf.flags.FLAGS
+FLAGS = tf.flags.FLAGS.flag_values_dict()
 
 
 class Trainer(object):
@@ -37,16 +37,16 @@ class Trainer(object):
     @staticmethod
     def __get_default_training_data_dir():
         from os.path import join as pjoin
-        return pjoin(FLAGS.training_set, FLAGS.train_subdir)
+        return pjoin(FLAGS["training-set"], FLAGS["train-subdir"])
 
     @staticmethod
     def __get_default_eval_data_dir():
         from os.path import join as pjoin
-        return pjoin(FLAGS.training_set, FLAGS.eval_subdir)
+        return pjoin(FLAGS["training-set"], FLAGS["eval-subdir"])
 
     @staticmethod
     def __get_default_run_config():
-        return tf.contrib.learn.RunConfig(model_dir=FLAGS.job_dir)
+        return tf.contrib.learn.RunConfig(model_dir=FLAGS["job-dir"])
 
     @staticmethod
     def __get_default_experiment_fn(estimator,
@@ -75,7 +75,7 @@ class Trainer(object):
         return do_make_experiment
 
     @staticmethod
-    def get_default_run_config(job_dir=FLAGS.job_dir):
+    def get_default_run_config(job_dir=FLAGS["job-dir"]):
         """Returns a default `RunConfig` for `Estimator`."""
         # this weird try/except is a static variable pattern in python
         # https://stackoverflow.com/questions/279561/what-is-the-python-equivalent-of-static-variables-inside-a-function/16214510#16214510

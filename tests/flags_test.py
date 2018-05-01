@@ -17,6 +17,7 @@
 
 import os
 import subprocess
+from os.path import dirname, abspath
 
 import tensorflow as tf
 
@@ -41,9 +42,10 @@ class FlagsTest(tf.test.TestCase):
     @staticmethod
     def _run_dummy_model(args):
         FNULL = open(os.devnull, "w")
-        return subprocess.call("python %s %s" % (__file__, args),
-                               shell=True,
-                               stderr=FNULL)
+        d = dirname(dirname(abspath(__file__)))
+        return subprocess.call("PYTHONPATH=%s:$PYTHONPATH python %s %s" % (d, __file__, args),
+                               stderr=FNULL,
+                               shell=True)
 
 
 def dummy_model(_):
