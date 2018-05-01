@@ -17,6 +17,7 @@
 
 from __future__ import absolute_import, division, print_function
 
+import sys
 import logging
 import multiprocessing as mp
 
@@ -75,20 +76,31 @@ class Flags(object):
         Flags.register_core_flags()
         Flags.register_dataset_flags()
 
-    # Flags have been rename in 0.3.0, old ones would be silently ignored
-    _legacy_flags = {
-        "train_subdir",
-        "eval_subdir",
-        "batch_size",
-        "shuffle_buffer_size",
-        "take_count",
-        "parsing_threads",
-        "interleaving_threads",
-        "interleaving_block_length",
-        "prefetch_buffer_size",
-        "training_set",
-        "job_dir"
-    }
+    @staticmethod
+    def fail_on_legacy_flags():
+        # Flags have been renamed in 0.3.0, old ones would be silently ignored
+        _legacy_flags = {
+            "train_subdir",
+            "eval_subdir",
+            "batch_size",
+            "shuffle_buffer_size",
+            "take_count",
+            "parsing_threads",
+            "interleaving_threads",
+            "interleaving_block_length",
+            "prefetch_buffer_size",
+            "training_set",
+            "job_dir"
+        }
+        # [RY] Tried to use argparse to parse flags, unsuccessfully :\
+        for a in sys.argv[1:]:
+            if "=" in a:
+                a = a.split("=")[0]
+            if a.startswith("--"):
+                a = a.strip().lstrip("--")
+                if a in _legacy_flags:
+                    raise Exception("Shouldn't use legacy flag: " + a)
 
 
+Flags.fail_on_legacy_flags()
 Flags.register_flags()
