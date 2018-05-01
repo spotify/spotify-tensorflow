@@ -8,3 +8,21 @@
 ## Raison d'être:
 
 Provide Spotify specific TensorFlow helpers.
+
+## Features
+
+ * tf.data integration with [Featran](https://github.com/spotify/featran)
+ * common Dataset API to read:
+   * TFRecord datasets as tf.Tensor
+   * TFRecord datasets as Pandas DataFrame
+   * TFRecord datasets as python dict
+ * tf.Graph freezing utilities
+ * TensorFlow integration with [Luigi](https://github.com/spotify/luigi)
+
+## Examples:
+
+Check examples in the [examples directory](https://github.com/spotify/spotify-tensorflow/tree/master/examples),
+currently they include:
+
+ * sklearn training via Pandas DataFrame dataset
+ * TensorFlow training via tf.Example dataset
