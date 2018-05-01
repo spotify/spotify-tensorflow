@@ -34,7 +34,7 @@ from tensorflow.python.lib.io import file_io
 
 from .tf_record_spec_parser import TfRecordSpecParser
 
-FLAGS = tf.flags.FLAGS
+FLAGS = tf.flags.FLAGS.flag_values_dict()
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -78,11 +78,11 @@ class Datasets(object):
         feature_info, compression, feature_groups = TfRecordSpecParser.parse_tf_record_spec(
             tf_record_spec_path, dir_path)
 
-        if FLAGS.interleaving_threads > 0:
+        if FLAGS["interleaving-threads"] > 0:
             dataset = tf.data.Dataset.from_tensor_slices(filenames)
             dataset = dataset.interleave(lambda f: tf.data.TFRecordDataset(f, compression),
-                                         cycle_length=FLAGS.interleaving_threads,
-                                         block_length=FLAGS.interleaving_block_length)
+                                         cycle_length=FLAGS["interleaving-threads"],
+                                         block_length=FLAGS["interleaving-block-length"])
         else:
             dataset = tf.data.TFRecordDataset(filenames, compression)
 
@@ -94,7 +94,7 @@ class Datasets(object):
         def _parse_function(example_proto):
             return tf.parse_single_example(example_proto, features)
 
-        dataset = dataset.map(_parse_function, num_parallel_calls=FLAGS.parsing_threads)
+        dataset = dataset.map(_parse_function, num_parallel_calls=FLAGS["parsing-threads"])
         return dataset, DatasetContext(filenames, features, feature_groups)
 
     @staticmethod
@@ -172,16 +172,16 @@ class Datasets(object):
         with tf.name_scope(scope):
             dataset, context = cls._get_featran_example_dataset(data_dir,
                                                                 feature_mapping_fn)
-            if FLAGS.shuffle_buffer_size > 0:
-                dataset = dataset.shuffle(FLAGS.shuffle_buffer_size)
+            if FLAGS["shuffle-buffer-size"] > 0:
+                dataset = dataset.shuffle(FLAGS["shuffle-buffer-size"])
 
-            if FLAGS.batch_size > 0:
-                dataset = dataset.batch(FLAGS.batch_size)
+            if FLAGS["batch-size"] > 0:
+                dataset = dataset.batch(FLAGS["batch-size"])
 
-            dataset = dataset.take(FLAGS.take_count)
+            dataset = dataset.take(FLAGS["take-count"])
 
-            if FLAGS.prefetch_buffer_size > 0:
-                dataset = dataset.prefetch(FLAGS.prefetch_buffer_size)
+            if FLAGS["prefetch-buffer-size"] > 0:
+                dataset = dataset.prefetch(FLAGS["prefetch-buffer-size"])
 
             mk_iterator_fn = mk_iterator_fn or cls._mk_one_shot_iterator
             return mk_iterator_fn(dataset), context
@@ -272,7 +272,7 @@ class Datasets(object):
                     logger.info("Fetched %d / %s records (%4d TFExamples/s)" % (
                         self._get_buff_size(),
                         str(self.batch_size) if self.batch_size < sys.maxsize else "?",
-                        FLAGS.batch_size / (timeit.default_timer() - t)))
+                        FLAGS["batch-size"] / (timeit.default_timer() - t)))
                 ret = OrderedDict()
                 for k in list(self.context.features.keys()):
                     ret[k] = self.buff[k][:self.batch_size]

@@ -17,6 +17,7 @@
 
 from __future__ import absolute_import, division, print_function
 
+import sys
 import logging
 import multiprocessing as mp
 
@@ -32,42 +33,42 @@ class Flags(object):
     def register_dataset_flags():
         logging.info("Registering Dataset flags")
 
-        flags.DEFINE_string("train_subdir", "train",
+        flags.DEFINE_string("train-subdir", "train",
                             "Location of training TFRecords, with the training set dir.")
 
-        flags.DEFINE_string("eval_subdir", "eval",
+        flags.DEFINE_string("eval-subdir", "eval",
                             "Location of eval TFRecords, with the training set dir.")
 
         # Dataset API parameters
 
-        flags.DEFINE_integer("batch_size", 128,
+        flags.DEFINE_integer("batch-size", 128,
                              "Size of the batch of the dataset iterator. 0 means no batching.")
 
-        flags.DEFINE_integer("shuffle_buffer_size", 512,
+        flags.DEFINE_integer("shuffle-buffer-size", 512,
                              "Size of the shuffle buffer. 0 means shuffle is turned off.")
 
-        flags.DEFINE_integer("take_count", -1,
+        flags.DEFINE_integer("take-count", -1,
                              "Creates a `Dataset` with at most `count` batches from this dataset.")
 
-        flags.DEFINE_integer("parsing_threads", mp.cpu_count(),
+        flags.DEFINE_integer("parsing-threads", mp.cpu_count(),
                              "Number of threads used for parsing files.")
 
-        flags.DEFINE_integer("interleaving_threads", 2,
+        flags.DEFINE_integer("interleaving-threads", 2,
                              "Interleaving cycle length. 0 means interleaving is turned off.")
 
-        flags.DEFINE_integer("interleaving_block_length", 32,
+        flags.DEFINE_integer("interleaving-block-length", 32,
                              "Interleaving block length.")
 
-        flags.DEFINE_integer("prefetch_buffer_size", 1024,
+        flags.DEFINE_integer("prefetch-buffer-size", 1024,
                              "Prefetch records. 0 means no pre-fetching.")
 
     @staticmethod
     def register_core_flags():
         logging.info("Registering core spotify-tensorflow flags")
-        flags.DEFINE_string("training_set", None,
+        flags.DEFINE_string("training-set", None,
                             "Location of the training set")
 
-        flags.DEFINE_string("job_dir", None,
+        flags.DEFINE_string("job-dir", None,
                             "Where to write data")
 
     @staticmethod
@@ -75,5 +76,31 @@ class Flags(object):
         Flags.register_core_flags()
         Flags.register_dataset_flags()
 
+    @staticmethod
+    def fail_on_legacy_flags():
+        # Flags have been renamed in 0.3.0, old ones would be silently ignored
+        _legacy_flags = {
+            "train_subdir",
+            "eval_subdir",
+            "batch_size",
+            "shuffle_buffer_size",
+            "take_count",
+            "parsing_threads",
+            "interleaving_threads",
+            "interleaving_block_length",
+            "prefetch_buffer_size",
+            "training_set",
+            "job_dir"
+        }
+        # [RY] Tried to use argparse to parse flags, unsuccessfully :\
+        for a in sys.argv[1:]:
+            if "=" in a:
+                a = a.split("=")[0]
+            if a.startswith("--"):
+                a = a.strip().lstrip("--")
+                if a in _legacy_flags:
+                    raise Exception("Shouldn't use legacy flag: " + a)
 
+
+Flags.fail_on_legacy_flags()
 Flags.register_flags()
