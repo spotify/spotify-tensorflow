@@ -30,7 +30,7 @@ logger.setLevel(logging.INFO)
 class FreezeGraph(object):
     """
     This API is discouraged - please use Estimator API and saved model, please read the
-    `official doc <https://www.tensorflow.org/programmers_guide/saved_model#using_savedmodel_with_estimators`_.  # noqa: E501
+    `official doc <https://www.tensorflow.org/programmers_guide/saved_model#using_savedmodel_with_estimators>`_.  # noqa: E501
     """
 
     @classmethod
