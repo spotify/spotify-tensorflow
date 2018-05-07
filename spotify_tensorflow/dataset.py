@@ -210,7 +210,7 @@ class Datasets(object):
                          take=sys.maxsize,  # type: int
                          feature_mapping_fn=None  # type: Callable[[List[FeatureInfo]], OrderedDict[str, Union[tf.FixedLenFeature, tf.VarLenFeature]]]  # noqa: E501
                          ):
-            # type: (...) -> Dict[str, np.ndarray]
+            # type: (...) -> Optional[Dict[str, np.ndarray]]
             """
             Read a TF dataset and load it into a Dictionary of Numpy Arrays.
 
@@ -227,7 +227,7 @@ class Datasets(object):
                            batch_size=10000,  # type: int
                            feature_mapping_fn=None  # type: Callable[[List[FeatureInfo]], OrderedDict[str, Union[tf.FixedLenFeature, tf.VarLenFeature]]]  # noqa: E501
                            ):
-            # type: (...) -> Iterator[Dict[str, np.ndarray]]
+            # type: (...) -> Iterator[Optional[Dict[str, np.ndarray]]]
             """
             Read a TF dataset in batches, each one yielded as a Dictonary.
 
@@ -253,10 +253,10 @@ class Datasets(object):
                 self.batch_size = batch_size
                 self.batch_iter = training_it.get_next()
                 self.context = context
-                self.buff = None  # type: OrderedDict[str, np.ndarray]
+                self.buff = None  # type: Optional[OrderedDict[str, np.ndarray]]
 
             def __iter__(self):
-                # type: () -> Iterator[OrderedDict[str, np.ndarray]]
+                # type: () -> Iterator[Optional[OrderedDict[str, np.ndarray]]]
                 logger.info("Starting TF Session...")
                 with tf.Session() as sess:
                     logger.info("Reading TFRecords...")
@@ -289,7 +289,7 @@ class Datasets(object):
                     return v1.append(v2)
 
             def _get_batch(self, sess):
-                # type: (tf.Session) -> OrderedDict[str, np.ndarray]
+                # type: (tf.Session) -> Optional[OrderedDict[str, np.ndarray]]
                 if self.buff is None:
                     self.buff = OrderedDict()
                     first_result = sess.run(self.batch_iter)
@@ -363,10 +363,13 @@ class Datasets(object):
 
         @staticmethod
         def __format_df(batch, multispec_feature_groups):
-            # type: (Dict[str, np.ndarray], Optional[List[List[str]]]) -> Union[pd.DataFrame, List[pd.DataFrame]]  # noqa: E501
+            # type: (Optional[Dict[str, np.ndarray]], Optional[List[List[str]]]) -> Union[pd.DataFrame, List[pd.DataFrame]]  # noqa: E501
             df = pd.DataFrame(batch)
             if not multispec_feature_groups:
-                return df[list(batch.keys())]
+                if batch:
+                    return df[list(batch.keys())]
+                else:
+                    return df[list({})]
             return [df[f] for f in multispec_feature_groups]
 
     dataframe = __DataFrameEndpoint()
