@@ -57,11 +57,11 @@ class DatasetContext(namedtuple("DatasetContext", ["filenames",
 class Datasets(object):
 
     @classmethod
-    def _get_featran_example_dataset(cls,
-                                     dir_path,  # type: str
-                                     feature_mapping_fn=None,  # type: Callable[[List[FeatureInfo]], OrderedDict[str, Union[tf.FixedLenFeature, tf.VarLenFeature]]]  # noqa: E501
-                                     tf_record_spec_path=None  # type: str
-                                     ):
+    def get_featran_example_dataset(cls,
+                                    dir_path,  # type: str
+                                    feature_mapping_fn=None,  # type: Callable[[List[FeatureInfo]], OrderedDict[str, Union[tf.FixedLenFeature, tf.VarLenFeature]]]  # noqa: E501
+                                    tf_record_spec_path=None  # type: str
+                                    ):
         # type: (...) -> Tuple[tf.data.Dataset, DatasetContext]
         """Get `Dataset` of parsed `Example` protos.
 
@@ -183,8 +183,8 @@ class Datasets(object):
             object.
         """
         with tf.name_scope(scope):
-            dataset, context = cls._get_featran_example_dataset(data_dir,
-                                                                feature_mapping_fn)
+            dataset, context = cls.get_featran_example_dataset(data_dir,
+                                                               feature_mapping_fn)
             if FLAGS["shuffle-buffer-size"] > 0:
                 dataset = dataset.shuffle(FLAGS["shuffle-buffer-size"])
 
