@@ -18,7 +18,7 @@
 
 import json
 from collections import OrderedDict, namedtuple
-from typing import Tuple, Text, List  # noqa: F401
+from typing import Tuple, Text, List, Optional  # noqa: F401
 
 import six
 import tensorflow as tf
@@ -31,7 +31,7 @@ class TfRecordSpecParser(object):
     # TODO: make this private, or handle arguments better, having both of the required doesn't make sense # noqa: E501
     @classmethod
     def parse_tf_record_spec(cls,
-                             tf_record_desc_path,  # type: str
+                             tf_record_desc_path,  # type: Optional[str]
                              dir_path  # type: str
                              ):
         # type: (...) -> Tuple[List[FeatureInfo], str, List[List[str]]]
@@ -82,7 +82,7 @@ class TfRecordSpecParser(object):
         return feature_info, compression_map[spec["compression"]], multispec_feature_groups
 
     @staticmethod
-    def __get_tf_record_spec_path(tf_record_desc_path,  # type: str
+    def __get_tf_record_spec_path(tf_record_desc_path,  # type: Optional[str]
                                   dir_path  # type: str
                                   ):
         # type: (...) -> Text

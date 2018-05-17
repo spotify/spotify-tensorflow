@@ -57,11 +57,11 @@ class DatasetContext(namedtuple("DatasetContext", ["filenames",
 class Datasets(object):
 
     @classmethod
-    def _get_featran_example_dataset(cls,
-                                     dir_path,  # type: str
-                                     feature_mapping_fn=None,  # type: Callable[[List[FeatureInfo]], OrderedDict[str, Union[tf.FixedLenFeature, tf.VarLenFeature]]]  # noqa: E501
-                                     tf_record_spec_path=None  # type: str
-                                     ):
+    def get_featran_example_dataset(cls,
+                                    dir_path,  # type: str
+                                    feature_mapping_fn=None,  # type: Callable[[List[FeatureInfo]], OrderedDict[str, Union[tf.FixedLenFeature, tf.VarLenFeature]]]  # noqa: E501
+                                    tf_record_spec_path=None  # type: str
+                                    ):
         # type: (...) -> Tuple[tf.data.Dataset, DatasetContext]
         """Get `Dataset` of parsed `Example` protos.
 
@@ -183,8 +183,8 @@ class Datasets(object):
             object.
         """
         with tf.name_scope(scope):
-            dataset, context = cls._get_featran_example_dataset(data_dir,
-                                                                feature_mapping_fn)
+            dataset, context = cls.get_featran_example_dataset(data_dir,
+                                                               feature_mapping_fn)
             if FLAGS["shuffle-buffer-size"] > 0:
                 dataset = dataset.shuffle(FLAGS["shuffle-buffer-size"])
 
@@ -253,7 +253,7 @@ class Datasets(object):
                 self.batch_size = batch_size
                 self.batch_iter = training_it.get_next()
                 self.context = context
-                self.buff = None  # type: OrderedDict[str, np.ndarray]
+                self.buff = OrderedDict()  # type: OrderedDict[str, np.ndarray]
 
             def __iter__(self):
                 # type: () -> Iterator[OrderedDict[str, np.ndarray]]
@@ -270,7 +270,7 @@ class Datasets(object):
 
             def _get_buff_size(self):
                 # type: () -> int
-                if self.buff is None:
+                if len(self.buff.keys()) == 0:
                     return 0
                 else:
                     return len(self.buff[list(self.buff.keys())[0]])
@@ -290,16 +290,14 @@ class Datasets(object):
 
             def _get_batch(self, sess):
                 # type: (tf.Session) -> OrderedDict[str, np.ndarray]
-                if self.buff is None:
-                    self.buff = OrderedDict()
-                    first_result = sess.run(self.batch_iter)
-                    for k in self.context.features.keys():
-                        self.buff[k] = first_result[k]
                 while self._get_buff_size() < self.batch_size:
                     t = timeit.default_timer()
                     current_batch = sess.run(self.batch_iter)
                     for k in self.context.features.keys():
-                        self.buff[k] = self._append(self.buff[k], current_batch[k])
+                        if k in self.buff:
+                            self.buff[k] = self._append(self.buff[k], current_batch[k])
+                        else:
+                            self.buff[k] = current_batch[k]
                     logger.info("Fetched %d / %s records (%4d TFExamples/s)" % (
                         self._get_buff_size(),
                         str(self.batch_size) if self.batch_size < sys.maxsize else "?",

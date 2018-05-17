@@ -62,7 +62,7 @@ class SquareTest(tf.test.TestCase):
     def test_get_featran_example_dataset(self):
         d, _, _ = DataUtil.write_featran_test_data()
         with self.test_session() as sess:
-            dataset, c = Datasets._get_featran_example_dataset(d)
+            dataset, c = Datasets.get_featran_example_dataset(d)
             self.assertEquals(len(c.features), 2)
             iterator = dataset.make_one_shot_iterator()
             r = iterator.get_next()
