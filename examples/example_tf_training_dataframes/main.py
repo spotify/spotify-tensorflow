@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # Copyright 2018 Spotify AB.
@@ -19,28 +18,39 @@
 
 from __future__ import absolute_import, division, print_function
 
+import pandas as pd
 from spotify_tensorflow.dataset import Datasets
+
+
+def transform_labels(label_data):
+    # Labels are one-hot encoded. Transform them to back to string labels
+    return pd.Series.idxmax(label_data)
 
 
 def main():
     from examples_utils import get_data_dir
-    train_data_dir = get_data_dir()
 
+    # Set up training data
+    train_data_dir = get_data_dir("train")
     df_train_data = Datasets.dataframe.read_dataset(train_data_dir)
+    feature_context = Datasets.get_context(train_data_dir)
+    (feature_names, label_names) = feature_context.multispec_feature_groups
 
-    # lets divide dict into label and features
-    label = df_train_data.pop("label")
-    features = df_train_data
+    label = df_train_data.loc[:, label_names].apply(transform_labels, axis=1)
+    features = df_train_data.loc[:, feature_names]
 
-    from sklearn.linear_model import LogisticRegression
-    model = LogisticRegression()
-    model.fit(features, label)
-
+    # Set up eval data
     eval_data_dir = get_data_dir("eval")
     df_eval_data = Datasets.dataframe.read_dataset(eval_data_dir)
-    eval_label = df_eval_data.pop("label")
-    eval_features = df_eval_data
+    eval_label = df_eval_data.loc[:, label_names].apply(transform_labels, axis=1)
+    eval_features = df_eval_data.loc[:, feature_names]
 
+    # Build model
+    from sklearn.linear_model import LogisticRegression
+    model = LogisticRegression(multi_class="multinomial", solver="newton-cg")
+    model.fit(features, label)
+
+    # Evaluate model
     score = model.score(eval_features, eval_label)
     print("Score is %f" % score)
 
