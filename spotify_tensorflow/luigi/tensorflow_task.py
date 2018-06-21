@@ -44,6 +44,13 @@ class TensorFlowTask(luigi.Task):
     region = None               The GCP region if running with ml-engine, e.g. europe-west1
     model_name_suffix = None    A string suffix representing the model name, which will be appended
                                 to the job name.
+    runtime_version = None      The Google Cloud ML Engine runtime version for this job. Defaults to
+                                the latest stable version. See
+                                https://cloud.google.com/ml/docs/concepts/runtime-version-list for a
+                                list of accepted versions.
+    scale_tier = None           Specifies the machine types, the number of replicas for workers and
+                                parameter servers. SCALE_TIER must be one of:
+                                    basic, basic-gpu, basic-tpu, custom, premium-1, standard-1.
 
     Also, you can specify command line arguments for your trainer by overriding the
     `def tf_task_args(self)` method.
@@ -67,6 +74,12 @@ class TensorFlowTask(luigi.Task):
     ml_engine_conf = luigi.Parameter(default=None,
                                      description="An ml-engine YAML configuration file.")
     tf_debug = luigi.BoolParameter(default=False, description="Run tf on debug mode")
+    runtime_version = luigi.Parameter(default=None,
+                                      description="The Google Cloud ML Engine runtime version "
+                                      "for this job.")
+    scale_tier = luigi.Parameter(default=None,
+                                 description="Specifies the machine types, the number of replicas "
+                                             "for workers and parameter servers.")
 
     def __init__(self, *args, **kwargs):
         super(TensorFlowTask, self).__init__(*args, **kwargs)
@@ -137,6 +150,10 @@ class TensorFlowTask(luigi.Task):
         params.append("--job-dir=%s" % self.get_job_dir())
         if self.blocking:
             params.append("--stream-logs")  # makes the execution "blocking"
+        if self.runtime_version:
+            params.append("--runtime-version=%s" % self.runtime_version)
+        if self.scale_tier:
+            params.append("--scale-tier=%s" % self.scale_tier)
         return params
 
     def _get_model_args(self):
