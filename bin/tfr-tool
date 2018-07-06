@@ -1,0 +1,31 @@
+#!/usr/bin/env python
+
+from spotify_tensorflow.example_decoder import ExampleWithSchemaDecoder, ExampleDecoder
+import argparse
+from tensorflow.python.lib.io import file_io
+import tensorflow as tf
+
+def get_args():
+    parser = argparse.ArgumentParser(description="Output TFRecords as JSON")
+    parser.add_argument("-s", "--schema", help="Path to Schema protobuf file. Uses Example if not "
+                                               "supplied.")
+    parser.add_argument('tfrecord_paths',
+                        metavar='TFRECORD_PATH',
+                        nargs='+',
+                        help="TFRecord files")
+    return parser.parse_args()
+
+
+if __name__ == '__main__':
+    cmdline_args = get_args()
+
+    if cmdline_args.schema:
+        example_decoder = ExampleWithSchemaDecoder(cmdline_args.schema)
+    else:
+        example_decoder = ExampleDecoder()
+
+    for tfrecord_file in cmdline_args.tfrecord_paths:
+        assert file_io.file_exists(tfrecord_file), "File not found: {}".format(tfrecord_file)
+        for record in tf.python_io.tf_record_iterator(tfrecord_file):
+            print(example_decoder.to_json(record))
+

@@ -47,4 +47,4 @@ class tox(TestCommand):
         sys.exit(errno)
 
 
-setup(pbr=True)
+setup(pbr=True, scripts=["bin/tfr-tool"])
