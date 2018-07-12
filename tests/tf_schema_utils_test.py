@@ -17,7 +17,6 @@
 #  under the License.
 
 import tensorflow as tf
-
 from spotify_tensorflow.tf_schema_utils import SchemaToFeatureSpec, FeatureSpecToSchema
 
 
@@ -25,14 +24,14 @@ class TFSchemaUtilsTest(tf.test.TestCase):
 
     def test_round_trip(self):
         feature_spec = {
-            'scalar_feature_1': tf.FixedLenFeature(shape=[], dtype=tf.int64),
-            'scalar_feature_2': tf.FixedLenFeature(shape=[], dtype=tf.int64),
-            'scalar_feature_3': tf.FixedLenFeature(shape=[], dtype=tf.float32),
-            'varlen_feature_1': tf.VarLenFeature(dtype=tf.float32),
-            'varlen_feature_2': tf.VarLenFeature(dtype=tf.string),
-            '1d_vector_feature': tf.FixedLenFeature(shape=[1], dtype=tf.string),
-            '2d_vector_feature': tf.FixedLenFeature(shape=[2, 2], dtype=tf.float32),
-            'sparse_feature': tf.SparseFeature('idx', 'value', tf.float32, 10),
+            "scalar_feature_1": tf.FixedLenFeature(shape=[], dtype=tf.int64),
+            "scalar_feature_2": tf.FixedLenFeature(shape=[], dtype=tf.int64),
+            "scalar_feature_3": tf.FixedLenFeature(shape=[], dtype=tf.float32),
+            "varlen_feature_1": tf.VarLenFeature(dtype=tf.float32),
+            "varlen_feature_2": tf.VarLenFeature(dtype=tf.string),
+            "1d_vector_feature": tf.FixedLenFeature(shape=[1], dtype=tf.string),
+            "2d_vector_feature": tf.FixedLenFeature(shape=[2, 2], dtype=tf.float32),
+            "sparse_feature": tf.SparseFeature("idx", "value", tf.float32, 10),
         }
         inferred_schema = FeatureSpecToSchema.apply(feature_spec)
         inferred_feature_spec = SchemaToFeatureSpec.apply(inferred_schema)

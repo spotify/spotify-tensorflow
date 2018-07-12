@@ -19,7 +19,6 @@ import json
 
 import tensorflow as tf
 from google.protobuf import text_format
-
 from spotify_tensorflow.example_decoders import ExampleDecoder, ExampleWithFeatureSpecDecoder
 
 
@@ -50,27 +49,27 @@ class ExampleDecodersTest(tf.test.TestCase):
 
     def test_example_with_feature_spec_decoder(self):
         feature_spec = {
-            'scalar_feature_1': tf.FixedLenFeature(shape=[], dtype=tf.int64),
-            'scalar_feature_2': tf.FixedLenFeature(shape=[], dtype=tf.int64),
-            'scalar_feature_3': tf.FixedLenFeature(shape=[], dtype=tf.float32),
-            'varlen_feature_1': tf.VarLenFeature(dtype=tf.float32),
-            'varlen_feature_2': tf.VarLenFeature(dtype=tf.string),
-            '1d_vector_feature': tf.FixedLenFeature(shape=[1], dtype=tf.string),
-            '2d_vector_feature': tf.FixedLenFeature(shape=[2, 2], dtype=tf.float32),
-            'sparse_feature': tf.SparseFeature('idx', 'value', tf.float32, 10),
+            "scalar_feature_1": tf.FixedLenFeature(shape=[], dtype=tf.int64),
+            "scalar_feature_2": tf.FixedLenFeature(shape=[], dtype=tf.int64),
+            "scalar_feature_3": tf.FixedLenFeature(shape=[], dtype=tf.float32),
+            "varlen_feature_1": tf.VarLenFeature(dtype=tf.float32),
+            "varlen_feature_2": tf.VarLenFeature(dtype=tf.string),
+            "1d_vector_feature": tf.FixedLenFeature(shape=[1], dtype=tf.string),
+            "2d_vector_feature": tf.FixedLenFeature(shape=[2, 2], dtype=tf.float32),
+            "sparse_feature": tf.SparseFeature("idx", "value", tf.float32, 10),
         }
 
         dec = ExampleWithFeatureSpecDecoder(feature_spec)
         actual_json = json.loads(dec.to_json(self.example_str))
         expected_decoded = {
-            'scalar_feature_1': 12,
-            'scalar_feature_2': 12,
-            'scalar_feature_3': 1.0,
-            'varlen_feature_1': [89.0],
-            '1d_vector_feature': ['this is a ,text'],
-            '2d_vector_feature': [[1.0, 2.0], [3.0, 4.0]],
-            'varlen_feature_2': ['female'],
-            'sparse_feature': [[1, 4], [12.0, 20.0]]
+            "scalar_feature_1": 12,
+            "scalar_feature_2": 12,
+            "scalar_feature_3": 1.0,
+            "varlen_feature_1": [89.0],
+            "1d_vector_feature": ["this is a ,text"],
+            "2d_vector_feature": [[1.0, 2.0], [3.0, 4.0]],
+            "varlen_feature_2": ["female"],
+            "sparse_feature": [[1, 4], [12.0, 20.0]]
         }
         self.assertEqual(actual_json, expected_decoded)
 

@@ -167,7 +167,7 @@ class FeatureSpecToSchema(object):
         f = schema_proto.feature.add()
         f.name = feature_name
 
-        if hasattr(feature_val, 'shape'):
+        if hasattr(feature_val, "shape"):
             # fixlen features
             fixed_shape = f.shape
 
