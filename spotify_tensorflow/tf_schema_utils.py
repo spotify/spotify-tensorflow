@@ -16,8 +16,8 @@
 #  under the License.
 
 import tensorflow as tf
-from tensorflow_metadata.proto.v0.schema_pb2 import INT, FLOAT, BYTES, Schema
 from tensorflow.python.lib.io import file_io
+from tensorflow_metadata.proto.v0.schema_pb2 import INT, FLOAT, BYTES, Schema
 
 
 class TFTypeMapper(object):
