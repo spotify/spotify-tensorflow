@@ -16,12 +16,13 @@
 #  specific language governing permissions and limitations
 #  under the License.
 
+from __future__ import absolute_import, division, print_function
+
 import argparse
 import os
 
 import tensorflow as tf
 from tensorflow.python.lib.io import file_io
-
 from spotify_tensorflow.example_decoders import ExampleWithFeatureSpecDecoder, ExampleDecoder
 from spotify_tensorflow.tf_schema_utils import SchemaToFeatureSpec
 
@@ -30,9 +31,9 @@ def get_args():
     parser = argparse.ArgumentParser(description="Output TFRecords as JSON")
     parser.add_argument("-s", "--schema", help="Path to Schema protobuf file. Uses Example if not "
                                                "supplied.")
-    parser.add_argument('tf_records_paths',
-                        metavar='TF_RECORDS_PATH',
-                        nargs='+',
+    parser.add_argument("tf_records_paths",
+                        metavar="TF_RECORDS_PATH",
+                        nargs="+",
                         help="TFRecords file (or directory containing .tfrecords files)")
     return parser.parse_args()
 
@@ -52,7 +53,7 @@ def list_tf_records(paths, schema):
             yield p, schema
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cmdline_args = get_args()
 
     default_schema = None
@@ -79,4 +80,4 @@ if __name__ == '__main__':
 
         # decode the examples
         for record in tf.python_io.tf_record_iterator(tf_record_file):
-            print example_decoder.to_json(record)
+            print(example_decoder.to_json(record))

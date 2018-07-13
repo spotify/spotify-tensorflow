@@ -27,14 +27,23 @@ from spotify_tensorflow.tensorflow_transform.tf_metadata import dataset_schema
 
 
 class ExampleDecoder(object):
+    """
+    Decode a tf.Example payload using the example.proto schema
+    """
     def to_json(self, example_str):
+        """
+        Converts a single tf.Example to JSon a string
+        :param example_str: tf.Example payload
+        """
         ex = example_pb2.Example()
         ex.ParseFromString(example_str)
         return MessageToJson(ex)
 
 
 class ExampleWithFeatureSpecDecoder(ExampleDecoder):
-
+    """
+    Decode a tf.Example payload using a TensorFlow feature_spec
+    """
     def __init__(self, feature_spec):
         super(ExampleWithFeatureSpecDecoder, self).__init__()
         schema = dataset_schema.from_feature_spec(feature_spec)
@@ -49,6 +58,10 @@ class ExampleWithFeatureSpecDecoder(ExampleDecoder):
             return json.JSONEncoder.default(self, obj)
 
     def to_json(self, example_str):
+        """
+        Converts a single tf.Example to JSon a string
+        :param example_str: tf.Example payload
+        """
         decoded = self._coder.decode(example_str)
         decoded_json = json.dumps(decoded, cls=self._NumpyArrayEncoder)
         return decoded_json
