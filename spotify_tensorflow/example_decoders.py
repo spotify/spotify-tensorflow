@@ -15,13 +15,15 @@
 #  specific language governing permissions and limitations
 #  under the License.
 
+from __future__ import absolute_import, division, print_function
+
 import json
 
 import numpy as np
 from google.protobuf.json_format import MessageToJson
 from tensorflow.core.example import example_pb2
-from tensorflow_transform.coders import example_proto_coder
-from tensorflow_transform.tf_metadata import dataset_schema
+from spotify_tensorflow.tensorflow_transform.coders import example_proto_coder
+from spotify_tensorflow.tensorflow_transform.tf_metadata import dataset_schema
 
 
 class ExampleDecoder(object):
@@ -42,6 +44,8 @@ class ExampleWithFeatureSpecDecoder(ExampleDecoder):
         def default(self, obj):
             if isinstance(obj, np.ndarray):
                 return obj.tolist()
+            if isinstance(obj, bytes):
+                return obj.decode()
             return json.JSONEncoder.default(self, obj)
 
     def to_json(self, example_str):

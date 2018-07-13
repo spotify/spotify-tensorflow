@@ -17,9 +17,9 @@
 #  under the License.
 
 import hashlib
-import urllib2
 
 import tensorflow as tf
+from six.moves.urllib.request import urlopen
 from spotify_tensorflow.tf_schema_utils import SchemaToFeatureSpec, FeatureSpecToSchema
 
 
@@ -51,7 +51,7 @@ class TFSchemaUtilsTest(tf.test.TestCase):
         ```
         """  # noqa: E501
         schema_url = "https://raw.githubusercontent.com/tensorflow/metadata/master/tensorflow_metadata/proto/v0/schema.proto"  # noqa: E501
-        response = urllib2.urlopen(schema_url)
+        response = urlopen(schema_url)
         schema_txt = response.read()
         actual_sha = hashlib.sha256(schema_txt).hexdigest()
         expected_sha = "fac5de9b802bd3e481606e2bb63496d169efda1cb90c7f848d95bc9d4823172b"
