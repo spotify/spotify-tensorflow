@@ -40,19 +40,36 @@ def get_args():
     return parser.parse_args()
 
 
-def list_tf_records(paths, schema):
-    for p in paths:
-        if file_io.is_directory(p):
-            local_schema_path = os.path.join(p, "_schema.pb")
-            if file_io.file_exists(local_schema_path):
-                _schema = local_schema_path
-            else:
-                _schema = schema
-            for f in file_io.list_directory(p):
-                if f.endswith(".tfrecords"):
-                    yield os.path.join(p, f), _schema
+def resolve_dir_schemas(dirs):
+    dir_schemas = []
+    for d in dirs:
+        s = os.path.join(d, "_schema.pb")
+        s_inferred = os.path.join(d, "_inferred_schema.pb")
+        if file_io.file_exists(s):
+            dir_schemas.append((d, s))
+        elif file_io.file_exists(s_inferred):
+            dir_schemas.append((d, s_inferred))
         else:
-            yield p, schema
+            dir_schemas.append((d, None))
+    return dict(dir_schemas)
+
+
+def list_tf_records(paths, default_schema):
+    for p in paths:
+        if file_io.file_exists(p):
+            files = [p]
+        else:
+            # dir or glob
+            files = [f for f in file_io.get_matching_files(p) if f.endswith(".tfrecords")]
+
+        dirs = set(os.path.dirname(f) for f in files)
+        if default_schema:
+            dir_schemas = dict((d, default_schema) for d in dirs)
+        else:
+            dir_schemas = resolve_dir_schemas(dirs)
+
+        for f in files:
+            yield f, dir_schemas[os.path.dirname(f)]
 
 
 if __name__ == "__main__":
