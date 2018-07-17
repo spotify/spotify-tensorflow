@@ -19,7 +19,9 @@
 from __future__ import absolute_import, division, print_function
 
 import argparse
+import errno
 import os
+import sys
 
 import tensorflow as tf
 from tensorflow.python.lib.io import file_io
@@ -80,4 +82,9 @@ if __name__ == "__main__":
 
         # decode the examples
         for record in tf.python_io.tf_record_iterator(tf_record_file):
-            print(example_decoder.to_json(record))
+            try:
+                print(example_decoder.to_json(record))
+            except IOError as e:
+                if e.errno == errno.EPIPE:
+                    sys.exit(0)
+                raise e
