@@ -20,7 +20,6 @@ from __future__ import absolute_import
 
 import tensorflow as tf
 from spotify_tensorflow.dataset import Datasets
-from spotify_tensorflow.trainer import Trainer
 
 FLAGS = tf.flags.FLAGS
 
@@ -31,7 +30,7 @@ def train(_):
     from examples_utils import get_data_dir
     import tempfile
 
-    config = Trainer.get_default_run_config(tempfile.mkdtemp())
+    config = tf.estimator.RunConfig(tempfile.mkdtemp())
 
     training_data_dir = get_data_dir("train")
     feature_context = Datasets.get_context(training_data_dir)
@@ -47,14 +46,18 @@ def train(_):
         # Get the rest of the features out of the spec
         return spec, label
 
+    def get_in_fn(dir):
+        def in_fn():
+            train_input_it, _ = Datasets.mk_iter(dir)
+            return split_features_label_fn(train_input_it.get_next())
+        return in_fn
+
     classifier = tf.estimator.LinearClassifier(feature_columns=features,
                                                n_classes=3,
                                                config=config)
-    Trainer.run(estimator=classifier,
-                split_features_label_fn=split_features_label_fn,
-                training_data_dir=training_data_dir,
-                eval_data_dir=get_data_dir("eval"),
-                run_config=config)
+
+    classifier.train(get_in_fn(get_data_dir("train")))\
+        .evaluate(get_in_fn(get_data_dir("eval")))
 
 
 def main():

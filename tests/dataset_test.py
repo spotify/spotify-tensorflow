@@ -26,7 +26,6 @@ from tensorflow.core.example import example_pb2
 from tensorflow.core.example import feature_pb2
 from tensorflow.python.lib.io.tf_record import TFRecordWriter
 from spotify_tensorflow.dataset import Datasets
-from spotify_tensorflow.trainer import Trainer
 
 
 class DataUtil(object):
@@ -71,15 +70,19 @@ class SquareTest(tf.test.TestCase):
             with self.assertRaises(tf.errors.OutOfRangeError):
                 f1.eval()
 
-    test_resources_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                      "resources/tf-test-resource/tf-records/train")
+    train_test_resources_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                            "resources/tf-test-resource/tf-records/train")
+
+    eval_test_resources_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                           "resources/tf-test-resource/tf-records/eval")
+
     N_FEATURES = 5
     N_Y = 1
     N_X = N_FEATURES - N_Y
     N_POINTS = 1817
 
     def test_mk_iter(self):
-        it, context = Datasets.mk_iter(self.test_resources_dir)
+        it, context = Datasets.mk_iter(self.train_test_resources_dir)
         batch_it = it.get_next()
 
         with tf.Session() as sess:
@@ -90,17 +93,17 @@ class SquareTest(tf.test.TestCase):
             self.assertEqual(len(batch[first_feature]), tf.flags.FLAGS["batch-size"].value)
 
     def test_data_frame_read_dataset(self):
-        data = Datasets.dataframe.read_dataset(self.test_resources_dir)
+        data = Datasets.dataframe.read_dataset(self.train_test_resources_dir)
         self.assertEqual(len(data), self.N_POINTS)
 
     def test_data_frame_read_dataset_dictonary(self):
-        data = Datasets.dict.read_dataset(self.test_resources_dir)
+        data = Datasets.dict.read_dataset(self.train_test_resources_dir)
         self.assertEqual(len(data), self.N_FEATURES)
         self.assertEqual(len(data["f1"]), self.N_POINTS)
 
     def test_data_frame_batch_iterator(self):
         batch_size = 10
-        it = Datasets.dataframe.batch_iterator(self.test_resources_dir, batch_size)
+        it = Datasets.dataframe.batch_iterator(self.train_test_resources_dir, batch_size)
         batches = [df for df in it]
         total = 0
         for df in batches[:-1]:
@@ -114,7 +117,8 @@ class SquareTest(tf.test.TestCase):
 
     def test_data_frame_unpack_multispec(self):
         # dataset was saved using multispec: `val dataset = MultiFeatureSpec(features, label)`
-        X, Y = Datasets.dataframe.read_dataset(self.test_resources_dir, unpack_multispec=True)
+        X, Y = Datasets.dataframe.read_dataset(self.train_test_resources_dir,
+                                               unpack_multispec=True)
         n_X, f_X = X.shape
         self.assertEqual(n_X, self.N_POINTS)
         self.assertEqual(f_X, self.N_X)
@@ -124,26 +128,27 @@ class SquareTest(tf.test.TestCase):
 
     def test_feature_order_multispec_dataframe(self):
         expected_features = ["f3", "f1", "f2_EVEN", "f2_ODD"]
-        df, _ = Datasets.dataframe.read_dataset(self.test_resources_dir, unpack_multispec=True)
+        df, _ = Datasets.dataframe.read_dataset(self.train_test_resources_dir,
+                                                unpack_multispec=True)
         self.assertEqual(list(df.columns.values), expected_features)
 
     def test_feature_order_dataframe(self):
         expected_features = ["f3", "f1", "f2_EVEN", "f2_ODD", "label"]
-        df = Datasets.dataframe.read_dataset(self.test_resources_dir)
+        df = Datasets.dataframe.read_dataset(self.train_test_resources_dir)
         self.assertEqual(list(df.columns.values), expected_features)
 
     def test_feature_order_multispec(self):
         expected_features = ["f3", "f1", "f2_EVEN", "f2_ODD"]
-        _, context = Datasets.mk_iter(self.test_resources_dir)
+        _, context = Datasets.mk_iter(self.train_test_resources_dir)
         feature_names, _ = context.multispec_feature_groups
         self.assertEqual(feature_names, expected_features)
 
     def test_trainer_shouldnt_crash(self):
-        context = Datasets.get_context(self.test_resources_dir)
+        context = Datasets.get_context(self.train_test_resources_dir)
         (feature_names, label_names) = context.multispec_feature_groups
         feature_columns = [tf.feature_column.numeric_column(name) for name in feature_names]
 
-        config = Trainer.get_default_run_config(job_dir=tempfile.mkdtemp())
+        config = tf.estimator.RunConfig(tempfile.mkdtemp())
 
         estimator = tf.estimator.LinearClassifier(feature_columns=feature_columns,
                                                   config=config)
@@ -153,8 +158,11 @@ class SquareTest(tf.test.TestCase):
             label = parsed_features.pop(label_names[0])
             return parsed_features, label
 
-        Trainer.run(estimator,
-                    training_data_dir=self.test_resources_dir,
-                    eval_data_dir=self.test_resources_dir,
-                    split_features_label_fn=split_features_label_fn,
-                    run_config=config)
+        def get_in_fn(dir):
+            def in_fn():
+                train_input_it, _ = Datasets.mk_iter(dir)
+                return split_features_label_fn(train_input_it.get_next())
+            return in_fn
+
+        estimator.train(get_in_fn(self.train_test_resources_dir))\
+            .evaluate(get_in_fn(self.eval_test_resources_dir))
