@@ -17,4 +17,4 @@
 #  under the License.
 from setuptools import setup
 
-setup(pbr=True, scripts=["bin/tfr-read"])
+setup(setup_requires=["pbr"], pbr=True, scripts=["bin/tfr-read"])
