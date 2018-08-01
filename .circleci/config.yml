@@ -17,8 +17,8 @@ jobs:
       - run:
           name: Run Tests
           command: |
-            sudo pip install --upgrade setuptools
-            PBR_REQUIREMENTS_FILES=/dev/null python setup.py tox --tox-args="-e py36,mypy"
+            sudo pip install tox
+            tox -e py36,mypy
 
       - save_cache:
           paths:
@@ -30,6 +30,7 @@ jobs:
           command: |
             pip install --user codecov
             python -m codecov
+
   test-python2:
     docker:
       - image: circleci/python:2.7.14
@@ -47,7 +48,8 @@ jobs:
       - run:
           name: Run Tests
           command: |
-            PBR_REQUIREMENTS_FILES=/dev/null python setup.py tox --tox-args="-e py27"
+            sudo pip install tox
+            tox -e py27
 
       - save_cache:
           paths:

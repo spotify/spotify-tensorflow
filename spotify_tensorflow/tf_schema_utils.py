@@ -19,7 +19,7 @@ from __future__ import absolute_import, division, print_function
 
 import tensorflow as tf
 from tensorflow.python.lib.io import file_io
-from spotify_tensorflow.tensorflow_metadata.proto.v0.schema_pb2 import INT, FLOAT, BYTES, Schema
+from tensorflow_metadata.proto.v0.schema_pb2 import INT, FLOAT, BYTES, Schema
 
 
 class TFTypeMapper(object):

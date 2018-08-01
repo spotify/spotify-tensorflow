@@ -16,10 +16,7 @@
 #  specific language governing permissions and limitations
 #  under the License.
 
-import hashlib
-
 import tensorflow as tf
-from six.moves.urllib.request import urlopen
 from spotify_tensorflow.tf_schema_utils import SchemaToFeatureSpec, FeatureSpecToSchema
 
 
@@ -39,20 +36,3 @@ class TFSchemaUtilsTest(tf.test.TestCase):
         inferred_schema = FeatureSpecToSchema.apply(feature_spec)
         inferred_feature_spec = SchemaToFeatureSpec.apply(inferred_schema)
         self.assertEqual(inferred_feature_spec, feature_spec)
-
-    def test_metadata_schema_sha(self):
-        """
-        Test the upstream tf_metadata schema didn't change since compiled.
-
-        if changed, you can update:
-        ```
-        curl -O https://raw.githubusercontent.com/tensorflow/metadata/master/tensorflow_metadata/proto/v0/schema.proto
-        protoc --python_out=spotify_tensorflow/tensorflow_metadata/proto/v0 schema.proto
-        ```
-        """  # noqa: E501
-        schema_url = "https://raw.githubusercontent.com/tensorflow/metadata/master/tensorflow_metadata/proto/v0/schema.proto"  # noqa: E501
-        response = urlopen(schema_url)
-        schema_txt = response.read()
-        actual_sha = hashlib.sha256(schema_txt).hexdigest()
-        expected_sha = "fac5de9b802bd3e481606e2bb63496d169efda1cb90c7f848d95bc9d4823172b"
-        self.assertEqual(expected_sha, actual_sha)
