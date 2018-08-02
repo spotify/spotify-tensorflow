@@ -20,6 +20,7 @@ from __future__ import absolute_import, division, print_function
 import os
 import tempfile
 from os.path import join as pjoin
+from collections import OrderedDict
 
 import tensorflow as tf
 from tensorflow.core.example import example_pb2
@@ -58,15 +59,22 @@ class DataUtil(object):
 
 
 class SquareTest(tf.test.TestCase):
+
+    # for test data let's use default value 0, that is for the one hot encoded features ODD/EVEN
+    @staticmethod
+    def feature_mapping(feature_info):
+        return OrderedDict((f.name, tf.FixedLenFeature((), f.kind, default_value=0))
+                           for f in feature_info)
+
     def test_get_featran_example_dataset(self):
         d, _, _ = DataUtil.write_featran_test_data()
         with self.test_session() as sess:
-            dataset, c = Datasets.get_featran_example_dataset(d)
+            dataset, c = Datasets.get_featran_example_dataset(d, feature_mapping_fn=self.feature_mapping)  # noqa: E501
             self.assertEquals(len(c.features), 2)
             iterator = dataset.make_one_shot_iterator()
             r = iterator.get_next()
             f1, f2 = r["f1"], r["f2"]
-            self.assertAllEqual([1, 2], sess.run([f1, f2]))
+            self.assertAllEqual([[1], [2]], sess.run([f1, f2]))
             with self.assertRaises(tf.errors.OutOfRangeError):
                 f1.eval()
 
@@ -82,7 +90,8 @@ class SquareTest(tf.test.TestCase):
     N_POINTS = 1817
 
     def test_mk_iter(self):
-        it, context = Datasets.mk_iter(self.train_test_resources_dir)
+        it, context = Datasets.mk_iter(self.train_test_resources_dir,
+                                       feature_mapping_fn=self.feature_mapping)
         batch_it = it.get_next()
 
         with tf.Session() as sess:
@@ -90,20 +99,24 @@ class SquareTest(tf.test.TestCase):
             self.assertEqual(len(batch), self.N_FEATURES)
 
             first_feature = list(context.features.keys())[0]
-            self.assertEqual(len(batch[first_feature]), tf.flags.FLAGS["batch-size"].value)
+            self.assertEqual(len(batch[first_feature]), 128)
 
     def test_data_frame_read_dataset(self):
-        data = Datasets.dataframe.read_dataset(self.train_test_resources_dir)
+        data = Datasets.dataframe.read_dataset(self.train_test_resources_dir,
+                                               feature_mapping_fn=self.feature_mapping)
         self.assertEqual(len(data), self.N_POINTS)
 
     def test_data_frame_read_dataset_dictonary(self):
-        data = Datasets.dict.read_dataset(self.train_test_resources_dir)
+        data = Datasets.dict.read_dataset(self.train_test_resources_dir,
+                                          feature_mapping_fn=self.feature_mapping)
         self.assertEqual(len(data), self.N_FEATURES)
         self.assertEqual(len(data["f1"]), self.N_POINTS)
 
     def test_data_frame_batch_iterator(self):
         batch_size = 10
-        it = Datasets.dataframe.batch_iterator(self.train_test_resources_dir, batch_size)
+        it = Datasets.dataframe.batch_iterator(self.train_test_resources_dir,
+                                               batch_size,
+                                               feature_mapping_fn=self.feature_mapping)
         batches = [df for df in it]
         total = 0
         for df in batches[:-1]:
@@ -118,7 +131,8 @@ class SquareTest(tf.test.TestCase):
     def test_data_frame_unpack_multispec(self):
         # dataset was saved using multispec: `val dataset = MultiFeatureSpec(features, label)`
         X, Y = Datasets.dataframe.read_dataset(self.train_test_resources_dir,
-                                               unpack_multispec=True)
+                                               unpack_multispec=True,
+                                               feature_mapping_fn=self.feature_mapping)
         n_X, f_X = X.shape
         self.assertEqual(n_X, self.N_POINTS)
         self.assertEqual(f_X, self.N_X)
@@ -129,17 +143,20 @@ class SquareTest(tf.test.TestCase):
     def test_feature_order_multispec_dataframe(self):
         expected_features = ["f3", "f1", "f2_EVEN", "f2_ODD"]
         df, _ = Datasets.dataframe.read_dataset(self.train_test_resources_dir,
-                                                unpack_multispec=True)
+                                                unpack_multispec=True,
+                                                feature_mapping_fn=self.feature_mapping)
         self.assertEqual(list(df.columns.values), expected_features)
 
     def test_feature_order_dataframe(self):
         expected_features = ["f3", "f1", "f2_EVEN", "f2_ODD", "label"]
-        df = Datasets.dataframe.read_dataset(self.train_test_resources_dir)
+        df = Datasets.dataframe.read_dataset(self.train_test_resources_dir,
+                                             feature_mapping_fn=self.feature_mapping)
         self.assertEqual(list(df.columns.values), expected_features)
 
     def test_feature_order_multispec(self):
         expected_features = ["f3", "f1", "f2_EVEN", "f2_ODD"]
-        _, context = Datasets.mk_iter(self.train_test_resources_dir)
+        _, context = Datasets.mk_iter(self.train_test_resources_dir,
+                                      feature_mapping_fn=self.feature_mapping)
         feature_names, _ = context.multispec_feature_groups
         self.assertEqual(feature_names, expected_features)
 
@@ -160,7 +177,7 @@ class SquareTest(tf.test.TestCase):
 
         def get_in_fn(dir):
             def in_fn():
-                train_input_it, _ = Datasets.mk_iter(dir)
+                train_input_it, _ = Datasets.mk_iter(dir, feature_mapping_fn=self.feature_mapping)
                 return split_features_label_fn(train_input_it.get_next())
             return in_fn
 
