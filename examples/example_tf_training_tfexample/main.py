@@ -20,14 +20,12 @@ from __future__ import absolute_import
 
 import tensorflow as tf
 from spotify_tensorflow.dataset import Datasets
-
-FLAGS = tf.flags.FLAGS
+from examples.examples_utils import get_data_dir, iris_features
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
 
 def train(_):
-    from examples_utils import get_data_dir
     import tempfile
 
     config = tf.estimator.RunConfig(tempfile.mkdtemp())
@@ -48,7 +46,7 @@ def train(_):
 
     def get_in_fn(dir):
         def in_fn():
-            train_input_it, _ = Datasets.mk_iter(dir)
+            train_input_it, _ = Datasets.mk_iter(dir, feature_mapping_fn=iris_features)
             return split_features_label_fn(train_input_it.get_next())
         return in_fn
 

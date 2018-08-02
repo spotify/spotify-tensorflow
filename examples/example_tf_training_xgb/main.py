@@ -26,6 +26,8 @@ import six
 import tensorflow as tf
 import xgboost as xgb
 from spotify_tensorflow.dataset import Datasets
+from examples.examples_utils import get_data_dir, iris_features
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -50,19 +52,18 @@ def transform_dataset(ctx, dataset):
 
 
 def train(_):
-    from examples_utils import get_data_dir
-
     training_data_dir = get_data_dir("train")
     feature_context = Datasets.get_context(training_data_dir)
 
     (feature_names, label_names) = feature_context.multispec_feature_groups
 
-    training_dataset = Datasets.dict.read_dataset(training_data_dir)
+    training_dataset = Datasets.dict.read_dataset(training_data_dir,
+                                                  feature_mapping_fn=iris_features)
     (feature_train_data, labels_train_data) = transform_dataset(feature_context,
                                                                 training_dataset)
 
     eval_data_dir = get_data_dir("eval")
-    eval_dataset = Datasets.dict.read_dataset(eval_data_dir)
+    eval_dataset = Datasets.dict.read_dataset(eval_data_dir, feature_mapping_fn=iris_features)
     (feature_eval_data, labels_eval_data) = transform_dataset(feature_context,
                                                               eval_dataset)
 

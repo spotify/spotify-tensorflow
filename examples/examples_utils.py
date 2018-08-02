@@ -18,6 +18,17 @@
 
 import inspect
 from os import path
+from collections import OrderedDict
+
+import tensorflow as tf
+
+
+def iris_features(feature_infos):
+    # for one hot encoded classes set default value to 0
+    return OrderedDict((f.name, tf.FixedLenFeature((), f.kind, default_value=0))
+                       if f.name.startswith("class")
+                       else (f.name, tf.FixedLenFeature((), f.kind))
+                       for f in feature_infos)
 
 
 def get_data_dir(subdir="train"):
