@@ -1,10 +1,10 @@
 import sbt._
 import Keys._
 
-val scioVersion = "0.5.0-alpha1"
-val beamVersion = "2.2.0"
+val scioVersion = "0.5.7"
+val beamVersion = "2.6.0"
 val scalaMacrosVersion = "2.1.0"
-val featranVersion = "0.1.16"
+val featranVersion = "0.2.1"
 
 lazy val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   organization          := "spotify",

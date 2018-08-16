@@ -20,13 +20,14 @@ from __future__ import absolute_import
 
 from collections import defaultdict
 import logging
+import os
 
 import numpy as np
 import six
 import tensorflow as tf
 import xgboost as xgb
 from spotify_tensorflow.dataset import Datasets
-from examples.examples_utils import get_data_dir, iris_features
+from examples.examples_utils import get_data_dir
 
 
 logger = logging.getLogger(__name__)
@@ -38,12 +39,11 @@ flags.DEFINE_integer("rounds", 50, "Number of Rounds")
 flags.DEFINE_string("local_dir", "/tmp/features", "GCS Train Path")
 
 
-def transform_dataset(ctx, dataset):
-    (feature_names, label_names) = ctx.multispec_feature_groups
+def transform_dataset(dataset, features_keys):
     data = defaultdict(list)
 
     for key, values in six.iteritems(dataset):
-        if key in feature_names:
+        if key in features_keys:
             data["features"].append(values)
         else:
             data["labels"].append(values)
@@ -52,25 +52,28 @@ def transform_dataset(ctx, dataset):
 
 
 def train(_):
-    training_data_dir = get_data_dir("train")
-    feature_context = Datasets.get_context(training_data_dir)
+    # Set up training data
+    train_data_dir = get_data_dir("train")
+    train_data = os.path.join(train_data_dir, "part-*")
+    schema_path = os.path.join(train_data_dir, "_inferred_schema.pb")
 
-    (feature_names, label_names) = feature_context.multispec_feature_groups
+    training_dataset = Datasets.dict.read_dataset(train_data, schema_path=schema_path)
 
-    training_dataset = Datasets.dict.read_dataset(training_data_dir,
-                                                  feature_mapping_fn=iris_features)
-    (feature_train_data, labels_train_data) = transform_dataset(feature_context,
-                                                                training_dataset)
+    # the feature keys are ordered alphabetically for determinism
+    label_keys = sorted([l for l in training_dataset.keys() if l.startswith("class_name")])
+    features_keys = sorted(set(training_dataset.keys()).difference(label_keys))
+
+    (feature_train_data, labels_train_data) = transform_dataset(training_dataset, features_keys)
 
     eval_data_dir = get_data_dir("eval")
-    eval_dataset = Datasets.dict.read_dataset(eval_data_dir, feature_mapping_fn=iris_features)
-    (feature_eval_data, labels_eval_data) = transform_dataset(feature_context,
-                                                              eval_dataset)
+    eval_data = os.path.join(eval_data_dir, "part-*")
+    eval_dataset = Datasets.dict.read_dataset(eval_data, schema_path=schema_path)
+    (feature_eval_data, labels_eval_data) = transform_dataset(eval_dataset, features_keys)
 
     params = {
         "objective": "multi:softmax",
         "verbose": False,
-        "num_class": len(label_names),
+        "num_class": len(label_keys),
         "max_depth": 6,
         "nthread": 4,
         "silent": 1
@@ -93,6 +96,7 @@ def train(_):
 
 
 def main():
+    tf.enable_eager_execution()
     tf.app.run(main=train)
 
 

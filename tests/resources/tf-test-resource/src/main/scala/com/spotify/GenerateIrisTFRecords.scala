@@ -35,13 +35,12 @@ object IrisFeaturesSpec {
     .optional(_.petalWidth)(StandardScaler("petal_width", withMean = true))
     .optional(_.sepalLength)(StandardScaler("sepal_length", withMean = true))
     .optional(_.sepalWidth)(StandardScaler("sepal_width", withMean = true))
-
-  val irisLabelSpec: FeatureSpec[Iris] = FeatureSpec
-    .of[Iris]
     .optional(_.className)(OneHotEncoder("class_name"))
-
-  val irisSpec = MultiFeatureSpec(irisFeaturesSpec, irisLabelSpec)
 }
+
+/*
+sbt "runMain com.spotify.IrisFeaturesJob --runner=DirectRunner --output=./tf-records-iris --tempLocation=gs://data-integration-test-us/tmp"
+*/
 
 object IrisFeaturesJob {
   def main(cmdLineArgs: Array[String]): Unit = {
@@ -50,17 +49,17 @@ object IrisFeaturesJob {
     val (sc, args) = ContextAndArgs(cmdLineArgs)
 
     val data = sc.typedBigQuery[Record]().map(Iris(_))
-    val extractedFeatures = irisSpec.extract(data)
+    val extractedFeatures = irisFeaturesSpec.extract(data)
 
     val (train, test) = extractedFeatures
       .featureValues[TFExample]
-      .randomSplit(.9)
+      .randomSplit(.8)
 
-    extractedFeatures.featureSettings.saveAsTextFile(
-      args("output") + "/settings")
-    train.saveAsTfExampleFile(args("output") + "/train", extractedFeatures)
-    test.saveAsTfExampleFile(args("output") + "/eval", extractedFeatures)
+    extractedFeatures.featureSettings.saveAsTextFile(args("output") + "/settings")
 
-    sc.close()
+    train.saveAsTfExampleFile(args("output") + "/train")
+    test.saveAsTfExampleFile(args("output") + "/eval")
+
+    sc.close().waitUntilDone()
   }
 }
