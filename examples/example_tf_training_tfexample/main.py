@@ -18,9 +18,13 @@
 
 from __future__ import absolute_import
 
+import os
+from collections import OrderedDict
+
 import tensorflow as tf
 from spotify_tensorflow.dataset import Datasets
-from examples.examples_utils import get_data_dir, iris_features
+from examples.examples_utils import get_data_dir
+
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
@@ -30,32 +34,41 @@ def train(_):
 
     config = tf.estimator.RunConfig(tempfile.mkdtemp())
 
-    training_data_dir = get_data_dir("train")
-    feature_context = Datasets.get_context(training_data_dir)
+    train_data_dir = get_data_dir("train")
+    schema_path = os.path.join(train_data_dir, "_inferred_schema.pb")
 
-    (feature_names, label_names) = feature_context.multispec_feature_groups
-    features = [tf.feature_column.numeric_column(x) for x in feature_names]
+    feature_spec, _ = Datasets.parse_schema(schema_path)
+    # we use OrderedDict and sorted keys for features for determinism
+    all_features = OrderedDict([(name, tf.feature_column.numeric_column(name, default_value=.0))
+                                for name in sorted(feature_spec.keys())])
+    feature_columns = all_features.copy()
+    label_keys = sorted([l for l in set(feature_columns.keys()) if l.startswith("class_name")])
+    for l in label_keys:
+        feature_columns.pop(l)
 
     def split_features_label_fn(spec):
         # Canned TF's LinearClassifier requires label to be a single integer, Featran gives us
         # one hot encoding for class, thus we need to convert one hot encoding to single integer
-        labels = tf.concat([[spec.pop(l)] for l in label_names], axis=0)
+        labels = tf.concat([[spec.pop(l)] for l in label_keys], axis=0)
         label = tf.argmax(labels, axis=0)
         # Get the rest of the features out of the spec
         return spec, label
 
-    def get_in_fn(dir):
+    def get_in_fn(data):
+        raw_feature_spec = tf.feature_column.make_parse_example_spec(all_features.values())
+
         def in_fn():
-            train_input_it, _ = Datasets.mk_iter(dir, feature_mapping_fn=iris_features)
-            return split_features_label_fn(train_input_it.get_next())
+            dataset = Datasets.get_example_dataset(data, features=raw_feature_spec)
+            return dataset.map(split_features_label_fn)
         return in_fn
 
-    classifier = tf.estimator.LinearClassifier(feature_columns=features,
+    classifier = tf.estimator.LinearClassifier(feature_columns=feature_columns.values(),
                                                n_classes=3,
                                                config=config)
 
-    classifier.train(get_in_fn(get_data_dir("train")))\
-        .evaluate(get_in_fn(get_data_dir("eval")))
+    train_data = os.path.join(train_data_dir, "part-*")
+    eval_data = os.path.join(get_data_dir("eval"), "part-*")
+    classifier.train(get_in_fn(train_data)).evaluate(get_in_fn(eval_data))
 
 
 def main():

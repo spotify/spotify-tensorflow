@@ -34,22 +34,18 @@ object GenerateTFRecords {
       .required(_.f3)(MinMaxScaler("f3"))
       .required(_.f1.toDouble)(Identity("f1"))
       .required(_.f2)(OneHotEncoder("f2"))
-
-    val label = FeatureSpec.of[Point]
       .required(_.label.toDouble)(Identity("label"))
-
 
     val scP = sc.parallelize(points)
 
-    val fs = MultiFeatureSpec(features, label)
-      .extract(scP)
-    
+    val fs = features.extract(scP)
+
     val (train, eval) = fs
       .featureValues[Example]
-      .randomSplit(.9)
+      .randomSplit(.8)
 
-    train.saveAsTfExampleFile(args("output") + "/train", fs)
-    eval.saveAsTfExampleFile(args("output") + "/eval", fs)
+    train.saveAsTfExampleFile(args("output") + "/train")
+    eval.saveAsTfExampleFile(args("output") + "/eval")
 
     fs.featureSettings
       .saveAsTextFile(args("output") + "/settings", numShards=1)

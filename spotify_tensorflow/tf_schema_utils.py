@@ -17,6 +17,8 @@
 
 from __future__ import absolute_import, division, print_function
 
+from typing import Union, Tuple, Dict  # noqa: F401
+
 import tensorflow as tf
 from tensorflow.python.lib.io import file_io
 from tensorflow_metadata.proto.v0.schema_pb2 import INT, FLOAT, BYTES, Schema
@@ -45,6 +47,7 @@ class TFTypeMapper(object):
         self._float_domain_to_dtype = dict([((t.min, t.max), t) for t in self._PB_TF_TYPES[FLOAT]])
 
     def proto_to_tf_type(self, feature, is_sparse=False):
+        # type: (Schema.Feature, bool) -> tf.DType
         """
         Go from tf.metadata Schema type to TensorFlow DTypes.
         """
@@ -73,6 +76,7 @@ class TFTypeMapper(object):
 
     @staticmethod
     def _extract_domain_min_max(feature, is_sparse=False):
+        # type: (Schema.Feature, bool) -> Tuple[Union[int, float], Union[int, float]]
         proto_type = feature.type
         if is_sparse:
             if proto_type == INT:
@@ -91,14 +95,16 @@ class TFTypeMapper(object):
         return d.min, d.max
 
 
-class SchemaToFeatureSpec:
+class SchemaToFeatureSpec(object):
     """
     Convert from a tf.metadata Schema to a TensorFlow feature_spec object.
     """
+
     _tf_type_mapper = TFTypeMapper()
 
     @classmethod
     def apply(cls, schema):
+        # type: (Schema) -> Dict[str, Union[tf.FixedLenFeature, tf.VarLenFeature, tf.SparseFeature]]  # noqa: E501
         """
         Main entry point.
         """
@@ -108,6 +114,7 @@ class SchemaToFeatureSpec:
 
     @classmethod
     def _parse_dense_feature(cls, feature):
+        # type: (Schema.Feature) -> Tuple[str, Union[tf.FixedLenFeature, tf.VarLenFeature]]
         dtype = cls._tf_type_mapper.proto_to_tf_type(feature)
         if feature.HasField("shape"):
             shape = [d.size for d in feature.shape.dim if d.HasField("size")]
@@ -118,6 +125,7 @@ class SchemaToFeatureSpec:
 
     @classmethod
     def _parse_sparse_feature(cls, feature):
+        # type: (Schema.Feature) -> Tuple[str, tf.SparseFeature]
         if len(feature.index_feature) == 1:
             index_key = feature.index_feature[0].name
         else:
@@ -133,13 +141,13 @@ class SchemaToFeatureSpec:
                                               size=size)
 
     @staticmethod
-    def parse_schema_file(schema_path):
+    def parse_schema_file(schema_path):  # type: (str) -> Schema
         """
         Read a schema file and return the proto object.
         """
         assert file_io.file_exists(schema_path), "File not found: {}".format(schema_path)
         schema = Schema()
-        with file_io.FileIO(schema_path, "r") as f:
+        with file_io.FileIO(schema_path, "rb") as f:
             schema.ParseFromString(f.read())
         return schema
 
@@ -152,6 +160,7 @@ class FeatureSpecToSchema(object):
 
     @classmethod
     def apply(cls, feature_spec):
+        # type: (Dict[str, Union[tf.FixedLenFeature, tf.VarLenFeature, tf.SparseFeature]]) -> Schema  # noqa: E501
         """
         Main entry point.
         """
@@ -166,6 +175,7 @@ class FeatureSpecToSchema(object):
 
     @classmethod
     def _add_feature_to_proto(cls, schema_proto, feature_name, feature_val):
+        # type: (Schema, str, Union[tf.FixedLenFeature, tf.VarLenFeature]) -> None  # noqa: E501
         f = schema_proto.feature.add()
         f.name = feature_name
 
@@ -191,6 +201,7 @@ class FeatureSpecToSchema(object):
 
     @classmethod
     def _add_sparse_feature_to_proto(cls, schema_proto, feature_name, feature_val):
+        # type: (Schema, str, tf.SparseFeature) -> None
         f = schema_proto.sparse_feature.add()
         f.name = feature_name
 

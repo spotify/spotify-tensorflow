@@ -30,7 +30,7 @@ class ExampleDecoder(object):
     """
     Decode a tf.Example payload using the example.proto schema
     """
-    def to_json(self, example_str):
+    def to_json(self, example_str):  # type: (str) -> str
         """
         Converts a single tf.Example to JSon a string
         :param example_str: tf.Example payload
@@ -57,9 +57,9 @@ class ExampleWithFeatureSpecDecoder(ExampleDecoder):
                 return obj.decode()
             return json.JSONEncoder.default(self, obj)
 
-    def to_json(self, example_str):
+    def to_json(self, example_str):  # type: (str) -> str
         """
-        Converts a single tf.Example to JSon a string
+        Converts a single tf.Example to Json a string
         :param example_str: tf.Example payload
         """
         decoded = self._coder.decode(example_str)

@@ -18,9 +18,11 @@
 
 from __future__ import absolute_import, division, print_function
 
+import os
+
 import pandas as pd
 from spotify_tensorflow.dataset import Datasets
-from examples.examples_utils import get_data_dir, iris_features
+from examples.examples_utils import get_data_dir
 
 
 def transform_labels(label_data):
@@ -29,27 +31,36 @@ def transform_labels(label_data):
 
 
 def main():
+    # Enable eager execution for DataFrame endpoint
+    import tensorflow as tf
+    tf.enable_eager_execution()
+
     # Set up training data
     train_data_dir = get_data_dir("train")
-    df_train_data = Datasets.dataframe.read_dataset(train_data_dir,
-                                                    feature_mapping_fn=iris_features)
-    feature_context = Datasets.get_context(train_data_dir)
-    (feature_names, label_names) = feature_context.multispec_feature_groups
+    train_data = os.path.join(train_data_dir, "part-*")
+    schema_path = os.path.join(train_data_dir, "_inferred_schema.pb")
 
-    label = df_train_data.loc[:, label_names].apply(transform_labels, axis=1)
-    features = df_train_data.loc[:, feature_names]
+    df_train_data = Datasets.dataframe.read_dataset(train_data, schema_path=schema_path)
 
-    # Set up eval data
-    eval_data_dir = get_data_dir("eval")
-    df_eval_data = Datasets.dataframe.read_dataset(eval_data_dir,
-                                                   feature_mapping_fn=iris_features)
-    eval_label = df_eval_data.loc[:, label_names].apply(transform_labels, axis=1)
-    eval_features = df_eval_data.loc[:, feature_names]
+    # the feature keys are ordered alphabetically for determinism
+    label_keys = sorted([l for l in set(df_train_data.columns) if l.startswith("class_name")])
+    feature_keys = sorted(set(df_train_data.columns).difference(label_keys))
+
+    label = df_train_data[label_keys].apply(transform_labels, axis=1)
+    features = df_train_data[feature_keys]
 
     # Build model
     from sklearn.linear_model import LogisticRegression
     model = LogisticRegression(multi_class="multinomial", solver="newton-cg")
     model.fit(features, label)
+
+    # Set up eval data
+    eval_data_dir = get_data_dir("eval")
+    eval_data = os.path.join(eval_data_dir, "part-*")
+    df_eval_data = Datasets.dataframe.read_dataset(eval_data, schema_path=schema_path)
+
+    eval_label = df_eval_data[label_keys].apply(transform_labels, axis=1)
+    eval_features = df_eval_data[feature_keys]
 
     # Evaluate model
     score = model.score(eval_features, eval_label)
