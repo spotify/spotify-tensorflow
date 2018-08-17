@@ -40,7 +40,9 @@ def main():
     train_data = os.path.join(train_data_dir, "part-*")
     schema_path = os.path.join(train_data_dir, "_inferred_schema.pb")
 
-    df_train_data = Datasets.dataframe.read_dataset(train_data, schema_path=schema_path)
+    df_train_data = next(Datasets.dataframe.examples_via_schema(train_data,
+                                                                schema_path,
+                                                                batch_size=1024))
 
     # the feature keys are ordered alphabetically for determinism
     label_keys = sorted([l for l in set(df_train_data.columns) if l.startswith("class_name")])
@@ -57,7 +59,9 @@ def main():
     # Set up eval data
     eval_data_dir = get_data_dir("eval")
     eval_data = os.path.join(eval_data_dir, "part-*")
-    df_eval_data = Datasets.dataframe.read_dataset(eval_data, schema_path=schema_path)
+    df_eval_data = next(Datasets.dataframe.examples_via_schema(eval_data,
+                                                               schema_path,
+                                                               batch_size=1024))
 
     eval_label = df_eval_data[label_keys].apply(transform_labels, axis=1)
     eval_features = df_eval_data[feature_keys]

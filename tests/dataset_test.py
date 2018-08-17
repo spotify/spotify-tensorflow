@@ -63,11 +63,10 @@ class DataUtil(object):
 
         def decorator(f):
             """Test method decorator."""
-            def decorated(self, **kwargs):
-                """Decorated the test method."""
+            def test_decorated(self, **kwargs):
                 with eager_mode():
                     f(self, **kwargs)
-            return decorated
+            return test_decorated
         return decorator
 
 
@@ -76,7 +75,7 @@ class SquareTest(test.TestCase):
     def test_simple_get_example_dataset(self):
         data, schema_path = DataUtil.write_featran_test_data()
         with self.test_session() as sess:
-            dataset = Datasets.get_example_dataset(data, schema_path)  # noqa: E501
+            dataset = Datasets.examples_via_schema(data, schema_path)  # noqa: E501
             iterator = dataset.make_one_shot_iterator()
             r = iterator.get_next()
             f1, f2 = r["f1"], r["f2"]
@@ -94,10 +93,10 @@ class SquareTest(test.TestCase):
     N_FEATURES = 5
     N_Y = 1
     N_X = N_FEATURES - N_Y
-    N_POINTS = 910
+    N_POINTS = 792
 
     def test_get_example_dataset(self):
-        dataset = Datasets.get_example_dataset(self.train_data, self.schema_path, batch_size=16)
+        dataset = Datasets.examples_via_schema(self.train_data, self.schema_path, batch_size=16)
         batch_it = dataset.make_one_shot_iterator().get_next()
 
         with tf.Session() as sess:
@@ -107,22 +106,28 @@ class SquareTest(test.TestCase):
 
     @DataUtil.run_in_eager()
     def test_data_frame_read_dataset(self):
-        data = Datasets.dataframe.read_dataset(self.train_data, schema_path=self.schema_path)
+        data = next(
+            Datasets.dataframe.examples_via_schema(self.train_data,
+                                                   batch_size=1024,
+                                                   schema_path=self.schema_path))
         self.assertEqual(self.N_POINTS, len(data))
         self.assertEqual(self.N_FEATURES, len(data.columns))
 
     @DataUtil.run_in_eager()
     def test_data_frame_read_dataset_dictionary(self):
-        data = Datasets.dict.read_dataset(self.train_data, schema_path=self.schema_path)
+        data = next(
+            Datasets.dict.examples_via_schema(self.train_data,
+                                              batch_size=1024,
+                                              schema_path=self.schema_path))
         self.assertEqual(self.N_FEATURES, len(data.keys()))
         self.assertEqual(self.N_POINTS, len(data["f1"]))
 
     @DataUtil.run_in_eager()
     def test_data_frame_batch_iterator(self):
         batch_size = 10
-        it = Datasets.dataframe.batch_iterator(self.train_data,
-                                               schema_path=self.schema_path,
-                                               batch_size=batch_size)
+        it = Datasets.dataframe.examples_via_schema(self.train_data,
+                                                    self.schema_path,
+                                                    batch_size=batch_size)
         batches = [df for df in it]
         total = 0
         for df in batches[:-1]:
@@ -155,7 +160,7 @@ class SquareTest(test.TestCase):
             raw_feature_spec = tf.feature_column.make_parse_example_spec(all_features.values())
 
             def in_fn():
-                dataset = Datasets.get_example_dataset(data, features=raw_feature_spec)
+                dataset = Datasets.examples_via_feature_spec(data, raw_feature_spec)
                 return dataset.map(split_features_label_fn)
             return in_fn
 

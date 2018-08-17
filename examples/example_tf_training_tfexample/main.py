@@ -58,7 +58,7 @@ def train(_):
         raw_feature_spec = tf.feature_column.make_parse_example_spec(all_features.values())
 
         def in_fn():
-            dataset = Datasets.get_example_dataset(data, features=raw_feature_spec)
+            dataset = Datasets.examples_via_feature_spec(data, raw_feature_spec)
             return dataset.map(split_features_label_fn)
         return in_fn
 
