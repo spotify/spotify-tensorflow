@@ -63,6 +63,54 @@ class DataUtil(object):
         return decorator
 
 
+class SparseTest(test.TestCase):
+
+    @staticmethod
+    def _write_test_data():
+        schema = FeatureSpecToSchema.apply({"f0": tf.VarLenFeature(dtype=tf.int64),
+                                            "f1": tf.VarLenFeature(dtype=tf.int64),
+                                            "f2": tf.VarLenFeature(dtype=tf.int64)})
+        batches = [
+            [1, 4, None],
+            [2, None, None],
+            [3, 5, None],
+            [None, None, None],
+        ]
+
+        example_proto = [example_pb2.Example(features=feature_pb2.Features(feature={
+            "f" + str(i): feature_pb2.Feature(int64_list=feature_pb2.Int64List(value=[f]))
+            for i, f in enumerate(batch) if f is not None
+        })) for batch in batches]
+
+        return DataUtil.write_test_data(example_proto, schema)
+
+    @DataUtil.run_in_eager()
+    def test_sparse_features(self):
+        data, schema_path = SparseTest._write_test_data()
+        dataset = next(Datasets.dataframe.examples_via_schema(data,
+                                                              schema_path,
+                                                              shuffle=False))  # noqa: E501
+        values = dataset.values
+        self.assertSequenceEqual([1, 4, 0], list(values[0]))
+        self.assertSequenceEqual([2, 0, 0], list(values[1]))
+        self.assertSequenceEqual([3, 5, 0], list(values[2]))
+        self.assertSequenceEqual([0, 0, 0], list(values[3]))
+
+    @DataUtil.run_in_eager()
+    def test_sparse_features_with_default(self):
+        data, schema_path = SparseTest._write_test_data()
+        d = 1
+        dataset = next(Datasets.dataframe.examples_via_schema(data,
+                                                              schema_path,
+                                                              default_value=d,
+                                                              shuffle=False))  # noqa: E501
+        values = dataset.values
+        self.assertSequenceEqual([1, 4, d], list(values[0]))
+        self.assertSequenceEqual([2, d, d], list(values[1]))
+        self.assertSequenceEqual([3, 5, d], list(values[2]))
+        self.assertSequenceEqual([d, d, d], list(values[3]))
+
+
 class SquareTest(test.TestCase):
 
     @staticmethod
