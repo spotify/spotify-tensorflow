@@ -221,6 +221,7 @@ class Datasets(object):
 
             :param file_pattern: List of files or patterns of file paths containing
                                  `Example` records. See `tf.gfile.Glob` for pattern rules
+            :param default_value: Value used if a sparse feature is missing.
             :param schema_path: tf.metadata Schema path
             :param compression_type: TFRecord compression type, see `tf.data.TFRecordDataset` doc
             :param batch_size: batch size, set to the size of the dataset to read all data at once
@@ -279,6 +280,7 @@ class Datasets(object):
             :param file_pattern: List of files or patterns of file paths containing
                                  `Example` records. See `tf.gfile.Glob` for pattern rules
             :param feature_spec: TensorFlow feature spec
+            :param default_value: Value used if a sparse feature is missing.
             :param compression_type: TFRecord compression type, see `tf.data.TFRecordDataset` doc
             :param batch_size: batch size, set to the size of the dataset to read all data at once
             :param shuffle: see `tensorflow.contrib.data.make_batched_features_dataset` doc
@@ -402,8 +404,9 @@ class Datasets(object):
             :param file_pattern: List of files or patterns of file paths containing
                                  `Example` records. See `tf.gfile.Glob` for pattern rules
             :param schema_path: tf.metadata Schema path
-            :param compression_type: TFRecord compression type, see `tf.data.TFRecordDataset` doc
+            :param default_value: Value used if a sparse feature is missing.
             :param batch_size: batch size, set to the size of the dataset to read all data at once
+            :param compression_type: TFRecord compression type, see `tf.data.TFRecordDataset` doc
             :param shuffle: see `tensorflow.contrib.data.make_batched_features_dataset` doc
             :param num_epochs: see `tensorflow.contrib.data.make_batched_features_dataset` doc
             :param shuffle_buffer_size: see `tensorflow.contrib.data.make_batched_features_dataset`
@@ -459,8 +462,9 @@ class Datasets(object):
             :param file_pattern: List of files or patterns of file paths containing
                                  `Example` records. See `tf.gfile.Glob` for pattern rules
             :param feature_spec: TensorFlow feature spec
-            :param compression_type: TFRecord compression type, see `tf.data.TFRecordDataset` doc
+            :param default_value: Value used if a sparse feature is missing.
             :param batch_size: batch size, set to the size of the dataset to read all data at once
+            :param compression_type: TFRecord compression type, see `tf.data.TFRecordDataset` doc
             :param shuffle: see `tensorflow.contrib.data.make_batched_features_dataset` doc
             :param num_epochs: see `tensorflow.contrib.data.make_batched_features_dataset` doc
             :param shuffle_buffer_size: see `tensorflow.contrib.data.make_batched_features_dataset`
