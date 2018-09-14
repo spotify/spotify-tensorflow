@@ -32,30 +32,20 @@ from spotify_tensorflow.tf_schema_utils import FeatureSpecToSchema
 
 
 class DataUtil(object):
-    schema = FeatureSpecToSchema.apply({"f1": tf.FixedLenFeature((), tf.int64),
-                                        "f2": tf.FixedLenFeature((), tf.int64)})
-    values = [{"f1": 1, "f2": 2}]
-    schem_filename = "schema.pb"
 
-    @classmethod
-    def write_featran_test_data(cls):
+    @staticmethod
+    def write_test_data(example_proto,
+                        schema,
+                        schema_filename="schema.pb"):
         tmp_dir = tf.test.get_temp_dir()
-        schema_path = pjoin(tmp_dir, cls.schem_filename)
+        schema_path = pjoin(tmp_dir, schema_filename)
         with open(schema_path, "wb") as f:
-            f.write(cls.schema.SerializeToString())
-        e = DataUtil.get_example_proto()
+            f.write(schema.SerializeToString())
         data_file = pjoin(tmp_dir, "test.tfrecord")
         with TFRecordWriter(data_file) as f:
-            for i in e:
+            for i in example_proto:
                 f.write(i.SerializeToString())
         return data_file, schema_path
-
-    @classmethod
-    def get_example_proto(cls):
-        return [example_pb2.Example(features=feature_pb2.Features(feature={
-            k: feature_pb2.Feature(int64_list=feature_pb2.Int64List(value=[v]))
-            for k, v in d.items()
-        })) for d in cls.values]
 
     @staticmethod
     def run_in_eager(__unused__=None):
@@ -63,17 +53,33 @@ class DataUtil(object):
 
         def decorator(f):
             """Test method decorator."""
+
             def test_decorated(self, **kwargs):
                 with eager_mode():
                     f(self, **kwargs)
+
             return test_decorated
+
         return decorator
 
 
 class SquareTest(test.TestCase):
 
+    @staticmethod
+    def _write_test_data():
+        schema = FeatureSpecToSchema.apply({"f1": tf.FixedLenFeature((), tf.int64),
+                                            "f2": tf.FixedLenFeature((), tf.int64)})
+        values = [{"f1": 1, "f2": 2}]
+
+        example_proto = [example_pb2.Example(features=feature_pb2.Features(feature={
+            k: feature_pb2.Feature(int64_list=feature_pb2.Int64List(value=[v]))
+            for k, v in d.items()
+        })) for d in values]
+
+        return DataUtil.write_test_data(example_proto, schema)
+
     def test_simple_get_example_dataset(self):
-        data, schema_path = DataUtil.write_featran_test_data()
+        data, schema_path = SquareTest._write_test_data()
         with self.test_session() as sess:
             dataset = Datasets.examples_via_schema(data, schema_path)  # noqa: E501
             iterator = dataset.make_one_shot_iterator()
@@ -162,6 +168,7 @@ class SquareTest(test.TestCase):
             def in_fn():
                 dataset = Datasets.examples_via_feature_spec(data, raw_feature_spec)
                 return dataset.map(split_features_label_fn)
+
             return in_fn
 
         estimator.train(get_in_fn(self.train_data)).evaluate(get_in_fn(self.eval_data))
