@@ -202,6 +202,7 @@ class Datasets(object):
         def examples_via_schema(cls,
                                 file_pattern,  # type: str
                                 schema_path,  # type: str
+                                default_value=0,  # type: float
                                 batch_size=128,  # type: int
                                 compression_type=None,  # type: str
                                 shuffle=True,  # type: bool
@@ -241,6 +242,7 @@ class Datasets(object):
             """
             return cls._examples(file_pattern=file_pattern,
                                  schema_path=schema_path,
+                                 default_value=default_value,
                                  batch_size=batch_size,
                                  compression_type=compression_type,
                                  shuffle=shuffle,
@@ -257,6 +259,7 @@ class Datasets(object):
         def examples_via_feature_spec(cls,
                                       file_pattern,  # type: str
                                       feature_spec,  # type: Dict[str, Union[tf.FixedLenFeature, tf.VarLenFeature, tf.SparseFeature]]  # noqa: E501
+                                      default_value=0,  # type: float
                                       batch_size=128,  # type: int
                                       compression_type=None,  # type: str
                                       shuffle=True,  # type: bool
@@ -296,6 +299,7 @@ class Datasets(object):
             """
             return cls._examples(file_pattern=file_pattern,
                                  feature_spec=feature_spec,
+                                 default_value=default_value,
                                  batch_size=batch_size,
                                  compression_type=compression_type,
                                  shuffle=shuffle,
@@ -313,6 +317,7 @@ class Datasets(object):
                       file_pattern,  # type: str
                       schema_path=None,  # type: str
                       feature_spec=None,  # type: Dict[str, Union[tf.FixedLenFeature, tf.VarLenFeature, tf.SparseFeature]]  # noqa: E501
+                      default_value=0,  # type: float
                       compression_type=None,  # type: str
                       batch_size=128,  # type: int
                       shuffle=True,  # type: bool
@@ -338,11 +343,17 @@ class Datasets(object):
 
                     shape = tensor.dense_shape.numpy()
                     # first element is batch size
+                    if shape[1] == 0:
+                        # this feature is not defined for any of the examples in the batch
+                        return np.repeat(default_value, shape[0])
+
+                    numpy_dense = tf.sparse_tensor_to_dense(tensor,
+                                                            default_value=default_value).numpy()
                     if shape[1] == 1:
                         # this is scalar feature, reshape to a vector
-                        return tf.sparse_tensor_to_dense(tensor).numpy().reshape(shape[0])
+                        return numpy_dense.reshape(shape[0])
                     else:
-                        return tf.sparse_tensor_to_dense(tensor).numpy()
+                        return numpy_dense
                 else:
                     raise ValueError("This type %s is not supported!", type(tensor).__name__)
 
@@ -371,6 +382,7 @@ class Datasets(object):
         def examples_via_schema(cls,
                                 file_pattern,  # type: str
                                 schema_path,  # type: str
+                                default_value=0,  # type: float
                                 batch_size=128,  # type: int
                                 compression_type=None,  # type: str
                                 shuffle=True,  # type: bool
@@ -410,6 +422,7 @@ class Datasets(object):
             """
             return cls._examples(file_pattern=file_pattern,
                                  schema_path=schema_path,
+                                 default_value=default_value,
                                  batch_size=batch_size,
                                  compression_type=compression_type,
                                  shuffle=shuffle,
@@ -426,6 +439,7 @@ class Datasets(object):
         def examples_via_feature_spec(cls,
                                       file_pattern,  # type: str
                                       feature_spec,  # type: Dict[str, Union[tf.FixedLenFeature, tf.VarLenFeature, tf.SparseFeature]]  # noqa: E501
+                                      default_value=0,  # type: float
                                       batch_size=128,  # type: int
                                       compression_type=None,  # type: str
                                       shuffle=True,  # type: bool
@@ -465,6 +479,7 @@ class Datasets(object):
             """
             return cls._examples(file_pattern=file_pattern,
                                  feature_spec=feature_spec,
+                                 default_value=default_value,
                                  batch_size=batch_size,
                                  compression_type=compression_type,
                                  shuffle=shuffle,
@@ -482,6 +497,7 @@ class Datasets(object):
                       file_pattern,  # type: str
                       schema_path=None,  # type: str
                       feature_spec=None,  # type: Dict[str, Union[tf.FixedLenFeature, tf.VarLenFeature, tf.SparseFeature]]  # noqa: E501
+                      default_value=0,  # type: float
                       compression_type=None,  # type: str
                       batch_size=128,  # type: int
                       shuffle=True,  # type: bool
@@ -498,6 +514,7 @@ class Datasets(object):
             Datasets._assert_eager("DataFrame")
             dataset = Datasets.dict._examples(file_pattern=file_pattern,
                                               schema_path=schema_path,
+                                              default_value=default_value,
                                               feature_spec=feature_spec,
                                               compression_type=compression_type,
                                               batch_size=batch_size,
