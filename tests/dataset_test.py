@@ -28,6 +28,7 @@ from tensorflow.core.example import feature_pb2
 from tensorflow.python.lib.io.tf_record import TFRecordWriter
 from tensorflow.python.eager.context import eager_mode
 from spotify_tensorflow.dataset import Datasets
+from spotify_tensorflow.featran import Featran
 from spotify_tensorflow.tf_schema_utils import FeatureSpecToSchema
 
 
@@ -143,11 +144,13 @@ class SquareTest(test.TestCase):
     train_data = os.path.join(data_dir, "train", "part-*")
     eval_data = os.path.join(data_dir, "eval", "part-*")
     schema_path = os.path.join(data_dir, "train", "_inferred_schema.pb")
+    settings_path = os.path.join(data_dir, "settings")
 
     N_FEATURES = 5
     N_Y = 1
     N_X = N_FEATURES - N_Y
     N_POINTS = 792
+    ordered_feature_names = Featran.names(settings_path)
 
     def test_get_example_dataset(self):
         dataset = Datasets.examples_via_schema(self.train_data, self.schema_path, batch_size=16)
@@ -175,6 +178,28 @@ class SquareTest(test.TestCase):
                                               schema_path=self.schema_path))
         self.assertEqual(self.N_FEATURES, len(data.keys()))
         self.assertEqual(self.N_POINTS, len(data["f1"]))
+
+    @DataUtil.run_in_eager()
+    def test_data_frame_read_dataset_ordered(self):
+        dataset = Datasets.dataframe.examples_via_schema(self.train_data,
+                                                         batch_size=1024,
+                                                         schema_path=self.schema_path)
+        ordered = Featran.reorder_dataframe_dataset(dataset, self.settings_path)
+        data = next(ordered)
+        self.assertEqual(self.N_POINTS, len(data))
+        self.assertEqual(self.N_FEATURES, len(data.columns))
+        self.assertEqual(self.ordered_feature_names, data.columns.values.tolist())
+
+    @DataUtil.run_in_eager()
+    def test_data_frame_read_dataset_dictionary_settings(self):
+        dataset = Datasets.dict.examples_via_schema(self.train_data,
+                                                    batch_size=1024,
+                                                    schema_path=self.schema_path)
+        ordered = Featran.reorder_numpy_dataset(dataset, self.settings_path)
+        data = next(ordered)
+        self.assertEqual(self.N_FEATURES, len(data.keys()))
+        self.assertEqual(self.N_POINTS, len(data["f1"]))
+        self.assertEqual(self.ordered_feature_names, list(data.keys()))
 
     @DataUtil.run_in_eager()
     def test_data_frame_batch_iterator(self):
