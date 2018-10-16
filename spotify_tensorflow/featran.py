@@ -17,9 +17,12 @@
 #
 
 import json
+from collections import OrderedDict
 from os.path import join as pjoin
-from typing import Callable, List, Dict, Any, Union  # noqa: F401
+from typing import Callable, List, Dict, Any, Union, Iterator  # noqa: F401
 
+import numpy as np  # noqa: F401
+import pandas as pd  # noqa: F401
 from tensorflow.python.lib.io import file_io
 
 
@@ -56,6 +59,42 @@ class Featran(object):
             return cls.__split_names(settings, feature_splitter_fn)
         else:
             return cls.__all_names(settings)
+
+    @classmethod
+    def reorder_numpy_dataset(cls,
+                              dataset,  # type: Iterator[Dict[str, np.ndarray]]
+                              settings_path  # type: str
+                              ):
+        # type: (...) -> Iterator[OrderedDict[str, np.ndarray]]
+        """
+        Reorders a numpy dictionary so that feature keys are in the same order as those in a Featran
+        settings file.
+
+        :param dataset: A dataset created via Datasets.dict
+        :param settings_path: Path to the Featran Settings JSON Directory
+        :return: An iterator over an OrderedDict mapping feature names to Numpy arrays
+        """
+        feature_names = Featran.names(settings_path)
+        for batch in dataset:
+            yield OrderedDict((name, batch[name]) for name in feature_names)
+
+    @classmethod
+    def reorder_dataframe_dataset(cls,
+                                  dataset,  # type: Iterator[pd.DataFrame]
+                                  settings_path  # type: str
+                                  ):
+        # type: (...) -> Iterator[pd.DataFrame]
+        """
+        Reorders a pandas DataFrame so that feature columns are in the same order as those in a
+        Featran settings file.
+
+        :param dataset: A dataset created via Datasets.dataframe
+        :param settings_path: Path to the Featran Settings JSON Directory
+        :return: An iterator over new DataFrame batches with ordered columns
+        """
+        feature_names = Featran.names(settings_path)
+        for batch in dataset:
+            yield batch[feature_names]
 
     @staticmethod
     def __get_featran_settings_file(dir_path, settings_filename=None):
