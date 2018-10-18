@@ -1,5 +1,5 @@
 -r requirements.txt
-tensorflow==1.9.0
+tensorflow==1.11.0
 coverage
 flake8>=3.4.1
 flake8-quotes>=0.12.0
