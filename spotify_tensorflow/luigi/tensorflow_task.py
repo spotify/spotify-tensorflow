@@ -70,7 +70,8 @@ class TensorFlowTask(luigi.Task):
     cloud = luigi.BoolParameter(description="Run on ml-engine")
     blocking = luigi.BoolParameter(default=True, description="Run in stream-logs/blocking mode")
     job_dir = luigi.Parameter(description="A job directory, used to store snapshots, logs and any "
-                                          "other artifacts. A trailing '/' is not required.")
+                                          "other artifacts. A trailing '/' is required for "
+                                          "'gs://' paths.")
     ml_engine_conf = luigi.Parameter(default=None,
                                      description="An ml-engine YAML configuration file.")
     tf_debug = luigi.BoolParameter(default=False, description="Run tf on debug mode")
