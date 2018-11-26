@@ -11,19 +11,19 @@ jobs:
 
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "test-requirements.txt" }}
+          - v1-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "test-requirements-mypy.txt" }}
           - v1-dependencies-
 
       - run:
           name: Run Tests
           command: |
             sudo pip install tox
-            tox -e py36,mypy
+            tox -e mypy
 
       - save_cache:
           paths:
             - ./.tox/py36
-          key: v1-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "test-requirements.txt" }}
+          key: v1-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "test-requirements-mypy.txt" }}
 
       - run:
           name: Upload Coverage

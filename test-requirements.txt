@@ -11,5 +11,5 @@ google-api-python-client>=1.5.4,<2.0
 oauth2client<4.0.0
 sklearn
 scipy
+tensorflow-transform
 xgboost
-mypy;python_version>='3.5'
