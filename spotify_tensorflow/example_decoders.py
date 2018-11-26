@@ -22,8 +22,8 @@ import json
 import numpy as np
 from google.protobuf.json_format import MessageToJson
 from tensorflow.core.example import example_pb2
-from spotify_tensorflow.tensorflow_transform.coders import example_proto_coder
-from spotify_tensorflow.tensorflow_transform.tf_metadata import dataset_schema
+from tensorflow_transform.coders import example_proto_coder
+from tensorflow_transform.tf_metadata import dataset_schema
 
 
 class ExampleDecoder(object):
