@@ -49,8 +49,23 @@ class Datasets(object):
 
         :param schema_path: tf.metadata Schema path
         """
-        from .tf_schema_utils import SchemaToFeatureSpec
+        from spotify_tensorflow.tf_schema_utils import SchemaToFeatureSpec
         schema = SchemaToFeatureSpec.parse_schema_file(schema_path)
+        return SchemaToFeatureSpec.apply(schema), schema
+
+    @classmethod
+    def parse_schema_from_stats(cls, stats_path):
+        # type: (str) -> Tuple[Dict[str, Union[tf.FixedLenFeature, tf.VarLenFeature, tf.SparseFeature]], Schema]  # noqa: E501
+        """
+        Returns TensorFlow Feature Spec and parsed tf.metadata Schema for given tf.metadata
+        DatasetFeatureStatisticsList.
+
+        :param stats_path: tf.metadata DatasetFeatureStatisticsList path
+        """
+        import tensorflow_data_validation as tfdv
+        from spotify_tensorflow.tf_schema_utils import SchemaToFeatureSpec
+        stats = tfdv.load_statistics(stats_path)
+        schema = tfdv.infer_schema(stats)
         return SchemaToFeatureSpec.apply(schema), schema
 
     @classmethod
