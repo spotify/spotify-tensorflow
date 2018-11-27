@@ -1,0 +1,7 @@
+#!/bin/bash -eux
+
+openssl enc -in "$1" \
+  -aes-256-cbc \
+  -d \
+  -k "$SP_ML_INFRA_ENC_PASS" \
+  > "${1%.enc}".unenc
