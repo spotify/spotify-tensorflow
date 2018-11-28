@@ -144,6 +144,7 @@ class SquareTest(test.TestCase):
     train_data = os.path.join(data_dir, "train", "part-*")
     eval_data = os.path.join(data_dir, "eval", "part-*")
     schema_path = os.path.join(data_dir, "train", "_inferred_schema.pb")
+    stats_path = os.path.join(data_dir, "train", "_stats.pb")
     settings_path = os.path.join(data_dir, "settings")
 
     N_FEATURES = 5
@@ -160,6 +161,10 @@ class SquareTest(test.TestCase):
             batch = sess.run(batch_it)
             self.assertEqual(len(batch), self.N_FEATURES)
             self.assertEqual(len(batch["f1"]), 16)
+
+    def test_parse_schema_from_stats(self):
+        feature_spec, schema = Datasets.parse_schema_from_stats(self.stats_path)
+        self.assertEqual(len(feature_spec), self.N_FEATURES)
 
     @DataUtil.run_in_eager()
     def test_data_frame_read_dataset(self):
