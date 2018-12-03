@@ -24,15 +24,15 @@ import subprocess
 import sys
 
 import luigi
-from luigi.contrib.gcs import GCSFlagTarget, GCSTarget
+from luigi.contrib.gcs import GCSFlagTarget
 from luigi.local_target import LocalTarget
-
-from .utils import is_gcs_path
+from spotify_tensorflow.luigi.base import TensorFlowLuigiBaseTask
+from spotify_tensorflow.luigi.utils import is_gcs_path
 
 logger = logging.getLogger("luigi-interface")
 
 
-class TensorFlowTask(luigi.Task):
+class TensorFlowTask(TensorFlowLuigiBaseTask):
     """Luigi wrapper for a TensorFlow task. To use, extend this class and provide values for the
     following properties:
 
@@ -176,34 +176,3 @@ class TensorFlowTask(luigi.Task):
             args.append("--job-dir=%s" % self.get_job_dir())
         args.extend(self.tf_task_args())
         return args
-
-    def _get_input_args(self):
-        job_input = self.input()
-        if isinstance(job_input, luigi.Target):
-            job_input = {"input": job_input}
-        if len(job_input) == 0:  # default requires()
-            return []
-        if not isinstance(job_input, dict):
-            raise ValueError("Input (requires()) must be dict type")
-        input_args = []
-        for (name, targets) in job_input.items():
-            uris = [self._get_uri(target) for target in luigi.task.flatten(targets)]
-            if isinstance(targets, dict):
-                # If targets is a dict that means it had multiple outputs. In this case make the
-                # input args "<input key>-<task output key>"
-                names = ["%s-%s" % (name, key) for key in targets.keys()]
-            else:
-                names = [name] * len(uris)
-            for (arg_name, uri) in zip(names, uris):
-                input_args.append("--%s=%s" % (arg_name, uri))
-
-        return input_args
-
-    @staticmethod
-    def _get_uri(target):
-        if hasattr(target, "uri"):
-            return target.uri()
-        elif isinstance(target, (GCSTarget, GCSFlagTarget)):
-            return target.path
-        else:
-            raise ValueError("Unsupported input Target type: %s" % target.__class__.__name__)
