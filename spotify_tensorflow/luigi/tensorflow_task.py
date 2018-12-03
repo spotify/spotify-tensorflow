@@ -178,6 +178,7 @@ class TensorFlowTask(luigi.Task):
         return args
 
     def _get_input_args(self):
+        # TODO(brianm): this doesn't work when subclass yields from `requires`
         job_input = self.input()
         if isinstance(job_input, luigi.Target):
             job_input = {"input": job_input}

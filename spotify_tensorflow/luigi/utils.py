@@ -19,6 +19,10 @@
 from __future__ import absolute_import, division, print_function
 
 import re
+import os
+import tempfile
+
+import requests
 
 
 def to_snake_case(s, sep="_"):
@@ -39,3 +43,51 @@ def get_uri(target):
         return target.uri()
     else:
         return target.path
+
+
+def _fetch_file(url, output_path=None):
+    # type: (str, str) -> str
+    """Fetches a file from the url and saves it to a temp file (or at the provided output path)."""
+    rep = requests.get(url, allow_redirects=True)
+    if rep.status_code / 100 != 2:
+        raise Exception("Got [status_code:{}] fetching file at [url:{}]".format(rep.status_code,
+                                                                                url))
+
+    if output_path is None:
+        output_path = tempfile.NamedTemporaryFile(delete=False).name
+
+    with open(output_path, "wb") as out:
+        out.write(rep.content)
+
+    return output_path
+
+
+def fetch_tfdv_whl(version, output_path=None, platform="manylinux1"):
+    # type: (str, str, str) -> str
+    """Fetches the TFDV pip package from PyPI and saves it to a temporary file (or the provided
+    output path). Returns the path to the fetched package."""
+    package_name = "tensorflow_data_validation"
+
+    if version is None:
+        import tensorflow_data_validation as tfdv
+        version = tfdv.__version__
+
+    pypi_base = "https://pypi.org/simple/{}".format(package_name)
+
+    package_url = None
+    with open(_fetch_file(pypi_base)) as listing_html:
+        for line in listing_html:
+            if version in line and platform in line:
+                package_url = re.findall(".*href=\"([^ ]*)#[^ ]*\".*", line)[0]
+                break
+
+    if package_url is None:
+        raise Exception("Problem fetching package. Couldn't parse listing at [url:{}]"
+                        .format(pypi_base))
+
+    if output_path is None:
+        temp_dir = tempfile.mkdtemp()
+        # Note: output_path file name must exactly match the remote wheel name.
+        output_path = os.path.join(temp_dir, package_url.split("/")[-1])
+
+    return _fetch_file(package_url, output_path=output_path)

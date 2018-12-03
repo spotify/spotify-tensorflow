@@ -69,28 +69,28 @@ class PythonDataflowTask(MixinNaiveBulkComplete, luigi.Task):
             ...
     """
     # Required dataflow args
-    python_script = None
-    project = None
-    staging_location = None
+    python_script = None  # type: str
+    project = None  # type: str
+    staging_location = None  # type: str
 
     # Dataflow requires one and only one of:
-    zone = None
-    region = None
+    zone = None  # type: str
+    region = None  # type: str
 
     # Optional dataflow args
-    temp_location = None
-    num_workers = None
-    autoscaling_algorithm = None
-    max_num_workers = None
-    network = None
-    subnetwork = None
-    disk_size_gb = None
-    worker_machine_type = None
-    worker_disk_type = None
-    service_account = None
-    job_name = None
-    requirements_file = None
-    local_runner = False
+    temp_location = None  # type: str
+    num_workers = None  # type: str
+    autoscaling_algorithm = None  # type: str
+    max_num_workers = None  # type: str
+    network = None  # type: str
+    subnetwork = None  # type: str
+    disk_size_gb = None  # type: str
+    worker_machine_type = None  # type: str
+    worker_disk_type = None  # type: str
+    service_account = None  # type: str
+    job_name = None  # type: str
+    requirements_file = None  # type: str
+    local_runner = False  # type: bool
 
     def __init__(self, *args, **kwargs):
         super(PythonDataflowTask, self).__init__(*args, **kwargs)
