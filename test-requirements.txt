@@ -1,5 +1,5 @@
 -r requirements.txt
-tensorflow==1.10.1
+tensorflow==1.11.0
 coverage
 flake8>=3.4.1
 flake8-quotes>=0.12.0
@@ -11,6 +11,6 @@ google-api-python-client>=1.5.4,<2.0
 oauth2client<4.0.0
 sklearn
 scipy
-tensorflow-data-validation
+tensorflow-data-validation==0.11.0
 tensorflow-transform
 xgboost
