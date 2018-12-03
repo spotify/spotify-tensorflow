@@ -1,5 +1,30 @@
 version: 2
 jobs:
+  harness-image-build:
+    machine: true
+    steps:
+      - checkout
+      - run:
+          name: Build harness image
+          command: |
+            cd ${HOME}/project
+            docker build -t harness:local harness
+            docker tag harness:local gcr.io/sp-ml-infra/spotify-tensorflow-worker-harness-tfdv:latest
+            docker tag harness:local gcr.io/sp-ml-infra/spotify-tensorflow-worker-harness-tfdv:$(git rev-parse --short HEAD)
+      - deploy:
+          name: Push harness image
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              # Auth
+              cd ${HOME}/project
+              SP_ML_INFRA_ENC_PASS="$SP_ML_INFRA_ENC_PASS" harness/bin/decrypt harness/sp-ml-infra-38fdc61438b2.json.enc
+              gcloud auth activate-service-account --key-file harness/sp-ml-infra-38fdc61438b2.json.unenc
+              gcloud --quiet config set project sp-ml-infra
+
+              # Push
+              gcloud docker -- push gcr.io/sp-ml-infra/spotify-tensorflow-worker-harness-tfdv:$(git rev-parse --short HEAD)
+              gcloud docker -- push gcr.io/sp-ml-infra/spotify-tensorflow-worker-harness-tfdv:latest
+            fi
   test-python3:
     docker:
       - image: circleci/python:3.6.1
@@ -67,3 +92,4 @@ workflows:
     jobs:
       - test-python3
       - test-python2
+      - harness-image-build
