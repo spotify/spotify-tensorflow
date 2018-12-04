@@ -48,7 +48,7 @@ class TFXBeamBaseTask(TensorFlowLuigiBaseTask):
         return []
 
     def run(self):
-        cmd_line = self.__make_cmd_line()
+        cmd_line = self._make_cmd_line()
         logger.info(" ".join(cmd_line))
 
         import subprocess
@@ -69,7 +69,7 @@ class TFXBeamBaseTask(TensorFlowLuigiBaseTask):
         return cmd_line
 
     def _make_cmd_line(self):
-        cmd = self.__beam_cmd_line_args()
+        cmd = self._beam_cmd_line_args()
         cmd.extend(self.extra_cmd_line_args())
         return cmd
 
