@@ -26,55 +26,13 @@ from abc import abstractmethod
 from typing import List  # noqa: F401
 
 import luigi
-from spotify_tensorflow.luigi.base import TensorFlowLuigiBaseTask
+from spotify_tensorflow.luigi.beam_base import BeamBaseTask
 
 logger = logging.getLogger("luigi-interface")
 
 
-class TFXBeamBaseTask(TensorFlowLuigiBaseTask):
-    """Base task for Beam jobs"""
-    runner = luigi.Parameter(default="DataflowRunner", description="Beam runner")
-    project = luigi.Parameter(description="GCP project for Dataflow Beam job")
-    machineWorkerType = luigi.Parameter(default="n1-standard-4", description="Dataflow worker type")
-    region = luigi.Parameter(default="europe-west1", description="Dataflow region")
-    temp_location = luigi.Parameter(description="Temporary location")
-    python_script = luigi.Parameter(description="Python script to run Beam job")
 
-    def __init__(self, *args, **kwargs):
-        super(TFXBeamBaseTask, self).__init__(*args, **kwargs)
-
-    def extra_cmd_line_args(self):  # type: () -> List[str]
-        """Additional command line arguments specific to subtask - override to provide"""
-        return []
-
-    def run(self):
-        cmd_line = self._make_cmd_line()
-        logger.info(" ".join(cmd_line))
-
-        import subprocess
-        try:
-            return_code = self._run_with_logging(cmd_line)
-        except subprocess.CalledProcessError as e:
-            logging.error(e, exc_info=True)
-            return_code = e.returncode
-        sys.exit(return_code)
-
-    def _beam_cmd_line_args(self):
-        cmd_line = ["python", self.python_script]
-        cmd_line.append("--runner=%s" % self.runner)
-        cmd_line.append("--project=%s" % self.project)
-        cmd_line.append("--temp_location=%s" % self.temp_location)
-        cmd_line.append("--machineWorkerType=%s" % self.machineWorkerType)
-        cmd_line.append("--region=%s" % self.region)
-        return cmd_line
-
-    def _make_cmd_line(self):
-        cmd = self._beam_cmd_line_args()
-        cmd.extend(self.extra_cmd_line_args())
-        return cmd
-
-
-class TFTransformJob(TFXBeamBaseTask):
+class TFTransformJob(BeamBaseTask):
     """tf.transform base luigi task"""
     requirements_file = luigi.Parameter(description="Requirements file for Dataflow Beam job")
 
