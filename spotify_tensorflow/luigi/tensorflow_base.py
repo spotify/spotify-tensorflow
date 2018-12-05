@@ -24,12 +24,11 @@ import logging
 
 import luigi
 from luigi.contrib.gcs import GCSTarget, GCSFlagTarget
-from typing import List  # noqa: F401
 
 logger = logging.getLogger("luigi-interface")
 
 
-class TensorFlowLuigiBaseTask(luigi.Task):
+class TensorFlowBaseTask(luigi.Task):
     def _get_input_args(self):
         job_input = self.input()
         if isinstance(job_input, luigi.Target):
@@ -82,4 +81,3 @@ class TensorFlowLuigiBaseTask(luigi.Task):
             output = "".join(output_lines)
             raise subprocess.CalledProcessError(exit_code, cmd, output=output)
         return exit_code
-

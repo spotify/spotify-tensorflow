@@ -21,9 +21,10 @@ from __future__ import division
 from __future__ import print_function
 
 import logging
+import sys
+from typing import List  # noqa: F401
 
 import luigi
-from typing import List  # noqa: F401
 
 logger = logging.getLogger("luigi-interface")
 
@@ -114,4 +115,3 @@ class PythonBeamBaseTask(BeamBaseTask):
     def beam_executable(self):
         cmd_line = "python {s}".format(s=self.python_script)
         return cmd_line
-

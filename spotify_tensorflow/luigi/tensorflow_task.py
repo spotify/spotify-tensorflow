@@ -26,13 +26,13 @@ import sys
 import luigi
 from luigi.contrib.gcs import GCSFlagTarget
 from luigi.local_target import LocalTarget
-from spotify_tensorflow.luigi.base import TensorFlowLuigiBaseTask
+from spotify_tensorflow.luigi.tensorflow_base import TensorFlowBaseTask
 from spotify_tensorflow.luigi.utils import is_gcs_path
 
 logger = logging.getLogger("luigi-interface")
 
 
-class TensorFlowTask(TensorFlowLuigiBaseTask):
+class TensorFlowTask(TensorFlowBaseTask):
     """Luigi wrapper for a TensorFlow task. To use, extend this class and provide values for the
     following properties:
 

@@ -21,7 +21,6 @@ from __future__ import division
 from __future__ import print_function
 
 import logging
-import sys
 from abc import abstractmethod
 from typing import List  # noqa: F401
 
@@ -29,7 +28,6 @@ import luigi
 from spotify_tensorflow.luigi.beam_base import BeamBaseTask
 
 logger = logging.getLogger("luigi-interface")
-
 
 
 class TFTransformJob(BeamBaseTask):

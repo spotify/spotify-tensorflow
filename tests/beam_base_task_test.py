@@ -34,11 +34,10 @@ class PythonBeamBaseTaskTest(TestCase):
 
     def test_task(self):
         task = DummyBeamTask(runner="DataflowRunner",
-                         project="dummy",
-                         machineWorkerType="n1-standard-4", #TODO change to the right name
-                         region="europe-west1",
-                         temp_location = "tmp"
-                         )
+                             project="dummy",
+                             machineWorkerType="n1-standard-4",
+                             region="europe-west1",
+                             temp_location="tmp")
         expected = [
             "python pybeamjob.py",
             "--runner=DataflowRunner",
