@@ -25,6 +25,7 @@ import sys
 from typing import List  # noqa: F401
 
 import luigi
+from luigi.contrib.gcs import GCSTarget, GCSFlagTarget
 
 logger = logging.getLogger("luigi-interface")
 
@@ -36,9 +37,6 @@ class BeamBaseTask(luigi.Task):
     machineWorkerType = luigi.Parameter(default="n1-standard-4", description="Dataflow worker type")
     region = luigi.Parameter(default="europe-west1", description="Dataflow region")
     temp_location = luigi.Parameter(description="Temporary location")
-
-    def __init__(self, *args, **kwargs):
-        super(BeamBaseTask, self).__init__(*args, **kwargs)
 
     def extra_cmd_line_args(self):  # type: () -> List[str]
         """
@@ -82,6 +80,37 @@ class BeamBaseTask(luigi.Task):
         cmd = self._beam_cmd_line_args()
         cmd.extend(self.extra_cmd_line_args())
         return cmd
+
+    def _get_input_args(self):
+        job_input = self.input()
+        if isinstance(job_input, luigi.Target):
+            job_input = {"input": job_input}
+        if len(job_input) == 0:  # default requires()
+            return []
+        if not isinstance(job_input, dict):
+            raise ValueError("Input (requires()) must be dict type")
+        input_args = []
+        for (name, targets) in job_input.items():
+            uris = [self._get_uri(target) for target in luigi.task.flatten(targets)]
+            if isinstance(targets, dict):
+                # If targets is a dict that means it had multiple outputs. In this case make the
+                # input args "<input key>-<task output key>"
+                names = ["%s-%s" % (name, key) for key in targets.keys()]
+            else:
+                names = [name] * len(uris)
+            for (arg_name, uri) in zip(names, uris):
+                input_args.append("--%s=%s" % (arg_name, uri))
+
+        return input_args
+
+    @staticmethod
+    def _get_uri(target):
+        if hasattr(target, "uri"):
+            return target.uri()
+        elif isinstance(target, (GCSTarget, GCSFlagTarget)):
+            return target.path
+        else:
+            raise ValueError("Unsupported input Target type: %s" % target.__class__.__name__)
 
     @staticmethod
     def _run_with_logging(cmd):
