@@ -32,3 +32,10 @@ def is_gcs_path(path):
     # type: (str) -> bool
     """Returns True if given path is GCS path, False otherwise."""
     return path.strip().lower().startswith("gs://")
+
+
+def get_uri(target):
+    if hasattr(target, "uri"):
+        return target.uri()
+    else:
+        return target.path
