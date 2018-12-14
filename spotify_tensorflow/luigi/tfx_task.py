@@ -22,8 +22,9 @@ from spotify_tensorflow.luigi.python_dataflow_task import PythonDataflowTask
 class TFXBaseTask(PythonDataflowTask):
     def __init__(self, *args, **kwargs):
         super(TFXBaseTask, self).__init__(*args, **kwargs)
-        # job_name must consist of only the characters [-a-z0-9]
-        self.job_name = self.__class__.__name__.replace("_", "-").lower()
+        if self.job_name is None:
+            # job_name must consist of only the characters [-a-z0-9]
+            self.job_name = self.__class__.__name__.replace("_", "-").lower()
 
     def tfx_args(self):
         """ Extra arguments that will be passed to your tfx dataflow job.
