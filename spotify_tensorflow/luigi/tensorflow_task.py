@@ -24,8 +24,9 @@ import subprocess
 import sys
 
 import luigi
-from luigi.contrib.gcs import GCSFlagTarget, GCSTarget
+from luigi.contrib.gcs import GCSFlagTarget
 from luigi.local_target import LocalTarget
+from spotify_tensorflow.luigi.utils import get_uri
 
 from .utils import is_gcs_path
 
@@ -188,7 +189,7 @@ class TensorFlowTask(luigi.Task):
             raise ValueError("Input (requires()) must be dict type")
         input_args = []
         for (name, targets) in job_input.items():
-            uris = [self._get_uri(target) for target in luigi.task.flatten(targets)]
+            uris = [get_uri(target) for target in luigi.task.flatten(targets)]
             if isinstance(targets, dict):
                 # If targets is a dict that means it had multiple outputs. In this case make the
                 # input args "<input key>-<task output key>"
@@ -199,12 +200,3 @@ class TensorFlowTask(luigi.Task):
                 input_args.append("--%s=%s" % (arg_name, uri))
 
         return input_args
-
-    @staticmethod
-    def _get_uri(target):
-        if hasattr(target, "uri"):
-            return target.uri()
-        elif isinstance(target, (GCSTarget, GCSFlagTarget)):
-            return target.path
-        else:
-            raise ValueError("Unsupported input Target type: %s" % target.__class__.__name__)
