@@ -33,7 +33,7 @@ jobs:
 
   test-python2:
     docker:
-      - image: circleci/python:2.7.14
+      - image: circleci/python:2.7.15
 
     working_directory: ~/repo
 
