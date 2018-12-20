@@ -20,14 +20,28 @@
 from __future__ import absolute_import, division, print_function
 
 import json
+import logging
+import subprocess
 
 from nose.tools import raises
 import responses
-from spotify_tensorflow.luigi.utils import _fetch_file, fetch_tfdv_whl
+from spotify_tensorflow.luigi.utils import _fetch_file, fetch_tfdv_whl, run_with_logging
 from tensorflow.python.platform import test
 
 
 class LuigiUtilsTest(test.TestCase):
+
+    @staticmethod
+    def test_run_with_logging():
+        logger = logging.getLogger("luigi-interface")
+        actual = run_with_logging(["python", "-c", "print(1)"], logger)
+        assert actual == 0
+
+        try:
+            run_with_logging(["python", "-c", "import sys; sys.exit(1)"], logger)
+            assert False
+        except subprocess.CalledProcessError:
+            assert True
 
     @staticmethod
     @responses.activate

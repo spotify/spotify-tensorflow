@@ -18,11 +18,10 @@
 from __future__ import absolute_import, division, print_function
 
 from unittest import TestCase
-import subprocess
 
 import luigi
 from luigi.contrib.gcs import GCSTarget
-from spotify_tensorflow.luigi.python_dataflow_task import PythonDataflowTask, run_with_logging
+from spotify_tensorflow.luigi.python_dataflow_task import PythonDataflowTask
 
 
 class DummyRawFeature(luigi.ExternalTask):
@@ -110,16 +109,6 @@ class PythonDataflowTaskTest(TestCase):
         actual = task._mk_cmd_line()
         actual.sort()
         self.assertEquals(actual, expected)
-
-    def test_run_with_logging(self):
-        actual = run_with_logging(["python", "-c", "print(1)"])
-        self.assertEquals(actual, 0)
-
-        try:
-            run_with_logging(["python", "-c", "import sys; sys.exit(1)"])
-            self.assertTrue(False)
-        except subprocess.CalledProcessError:
-            self.assertTrue(True)
 
     def test_task_failed_on_validation(self):
         task = PythonDataflowTaskFailedOnValidation()

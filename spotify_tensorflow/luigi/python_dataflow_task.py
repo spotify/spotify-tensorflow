@@ -22,7 +22,7 @@ import subprocess
 
 import luigi
 from luigi.task import MixinNaiveBulkComplete
-from spotify_tensorflow.luigi.utils import get_uri
+from spotify_tensorflow.luigi.utils import get_uri, run_with_logging
 
 logger = logging.getLogger("luigi-interface")
 
@@ -130,7 +130,7 @@ class PythonDataflowTask(MixinNaiveBulkComplete, luigi.Task):
         logger.info(" ".join(cmd_line))
 
         try:
-            run_with_logging(cmd_line)
+            run_with_logging(cmd_line, logger)
         except subprocess.CalledProcessError as e:
             logging.error(e, exc_info=True)
             # exit luigi with the same exit code as the python dataflow job proccess
@@ -286,24 +286,3 @@ class PythonDataflowTask(MixinNaiveBulkComplete, luigi.Task):
         :rtype: Dict of String to String
         """
         return self._output_uris
-
-
-def run_with_logging(cmd):
-    """
-    Run cmd and wait for it to finish. While cmd is running, we read it's
-    output and print it to a logger.
-    """
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    output_lines = []
-    while True:
-        line = process.stdout.readline()
-        if not line:
-            break
-        line = line.decode("utf-8")
-        output_lines += [line]
-        logger.info(line.rstrip("\n"))
-    exit_code = process.wait()
-    if exit_code:
-        output = "".join(output_lines)
-        raise subprocess.CalledProcessError(exit_code, cmd, output=output)
-    return exit_code
