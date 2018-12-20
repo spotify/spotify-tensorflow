@@ -55,7 +55,7 @@ class TensorflowTaskTest(TestCase):
                          job_dir="/local/job/dir",
                          model_package_path="/path/to/package")
         expected = [
-            "gcloud ml-engine local train",
+            "gcloud", "ml-engine", "local", "train",
             "--package-path=/path/to/package",
             "--module-name=models.my_tf_model",
             "--",
@@ -64,7 +64,7 @@ class TensorflowTaskTest(TestCase):
             "--arg1=foo",
             "--arg2=bar"
         ]
-        self.assertEquals(task._mk_cmd(), " ".join(expected))
+        self.assertEquals(task._mk_cmd(), expected)
 
     def test_cloud_task(self):
         task = DummyTask(cloud=True,
@@ -89,7 +89,7 @@ class TensorflowTaskTest(TestCase):
             "--arg1=foo",
             "--arg2=bar"
         ]
-        actual = task._mk_cmd().split(" ")
+        actual = task._mk_cmd()
         self.assertEquals(actual[:6], expected[:6])
         self.assertRegexpMatches(actual[6], expected[6])
         self.assertEquals(actual[7:], expected[7:])

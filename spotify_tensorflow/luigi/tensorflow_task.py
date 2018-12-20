@@ -20,15 +20,12 @@ from __future__ import absolute_import, division, print_function
 
 import getpass
 import logging
-import subprocess
-import sys
+import uuid
 
 import luigi
 from luigi.contrib.gcs import GCSFlagTarget
 from luigi.local_target import LocalTarget
-from spotify_tensorflow.luigi.utils import get_uri
-
-from .utils import is_gcs_path
+from spotify_tensorflow.luigi.utils import is_gcs_path, get_uri, run_with_logging
 
 logger = logging.getLogger("luigi-interface")
 
@@ -93,10 +90,7 @@ class TensorFlowTask(luigi.Task):
     def run(self):
         cmd = self._mk_cmd()
         logger.info("Running:\n```\n%s\n```", cmd)
-        ret = subprocess.call(cmd, shell=True)
-        if ret != 0:
-            logger.error("Training failed. Aborting.")
-            sys.exit(ret)
+        run_with_logging(cmd, logger)
         logger.info("Training successful. Marking as done.")
         self._success_hook()
 
@@ -119,19 +113,19 @@ class TensorFlowTask(luigi.Task):
             open(success_file, "a").close()
 
     def _mk_cmd(self):
-        cmd = ["gcloud ml-engine"]
+        cmd = ["gcloud", "ml-engine"]
         if self.cloud:
             cmd.extend(self._mk_cloud_params())
         else:
-            cmd.append("local train")
+            cmd.extend(["local", "train"])
 
         cmd.extend(self._get_model_args())
 
         if self.tf_debug:
-            cmd += ["--verbosity=debug"]
+            cmd.append("--verbosity=debug")
 
         cmd.extend(self._get_job_args())
-        return " ".join(cmd)
+        return cmd
 
     def get_job_dir(self):
         """Get job directory used to store snapshots, logs, final output and any other artifacts."""
@@ -141,10 +135,12 @@ class TensorFlowTask(luigi.Task):
         params = []
         if self.gcp_project:
             params.append("--project=%s" % self.gcp_project)
-        import uuid
-        params.append("jobs submit training %s_%s_%s" % (getpass.getuser(),
-                                                         self.__class__.__name__,
-                                                         str(uuid.uuid4()).replace("-", "_")))
+
+        job_name = "%s_%s_%s" % (getpass.getuser(), self.__class__.__name__,
+                                 str(uuid.uuid4()).replace("-", "_"))
+
+        params.extend(["jobs", "submit", "training", job_name])
+
         if self.region:
             params.append("--region=%s" % self.region)
         if self.ml_engine_conf:

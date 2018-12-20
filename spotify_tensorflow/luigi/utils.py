@@ -20,6 +20,7 @@ from __future__ import absolute_import, division, print_function
 
 import re
 import os
+import subprocess
 import tempfile
 
 import requests
@@ -45,6 +46,27 @@ def get_uri(target):
         return target.path
     else:
         raise ValueError("Unknown input target type: %s" % target.__class__.__name__)
+
+
+def run_with_logging(cmd, logger):
+    """
+    Run cmd and wait for it to finish. While cmd is running, we read it's
+    output and print it to a logger.
+    """
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    output_lines = []
+    while True:
+        line = process.stdout.readline()
+        if not line:
+            break
+        line = line.decode("utf-8")
+        output_lines += [line]
+        logger.info(line.rstrip("\n"))
+    exit_code = process.wait()
+    if exit_code:
+        output = "".join(output_lines)
+        raise subprocess.CalledProcessError(exit_code, cmd, output=output)
+    return exit_code
 
 
 def _fetch_file(url, output_path=None):
