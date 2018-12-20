@@ -21,7 +21,7 @@ from unittest import TestCase
 
 import luigi
 from luigi.contrib.gcs import GCSTarget
-from spotify_tensorflow.luigi.tfx_task import TFXBaseTask
+from spotify_tensorflow.luigi.tfx_task import TFXBaseTask, TFTransformTask
 
 
 class DummyRawFeature(luigi.ExternalTask):
@@ -60,6 +60,50 @@ class TFXBaseTaskTest(TestCase):
             "--staging_location=staging_uri",
             "--requirements_file=tfx_requirement.txt",
             "--job_name=dummyusertfxtask",
+            "--foo=bar"
+        ]
+        expected.sort()
+        actual = task._mk_cmd_line()
+        actual.sort()
+        self.assertEquals(actual, expected)
+
+
+class DummyUserTftTask(TFTransformTask):
+    project = "dummy"
+    staging_location = "staging_uri"
+    python_script = "mytft.py"
+    requirements_file = "tft_requirement.txt"
+    job_name = "dummyusertfttask-test"
+
+    def get_schema_file(self):
+        return "schema.pbtxt"
+
+    def requires(self):
+        return {"input": DummyRawFeature()}
+
+    def args(self):
+        return ["--foo=bar"]
+
+    def output(self):
+        return GCSTarget(path="output_uri")
+
+
+class TFTransformTaskTest(TestCase):
+
+    def test_task(self):
+        task = DummyUserTftTask()
+
+        expected = [
+            "python",
+            "mytft.py",
+            "--runner=DataflowRunner",
+            "--project=dummy",
+            "--input=output_uri/part-*",
+            "--output=output_uri",
+            "--staging_location=staging_uri",
+            "--requirements_file=tft_requirement.txt",
+            "--schema_file=schema.pbtxt",
+            "--job_name=dummyusertfttask-test",
             "--foo=bar"
         ]
         expected.sort()
