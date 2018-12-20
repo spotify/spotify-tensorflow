@@ -41,8 +41,10 @@ def is_gcs_path(path):
 def get_uri(target):
     if hasattr(target, "uri"):
         return target.uri()
-    else:
+    elif hasattr(target, "path"):
         return target.path
+    else:
+        raise ValueError("Unknown input target type: %s" % target.__class__.__name__)
 
 
 def _fetch_file(url, output_path=None):
