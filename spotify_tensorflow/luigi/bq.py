@@ -20,8 +20,7 @@ from __future__ import absolute_import, division, print_function
 
 import luigi
 from luigi.contrib.bigquery import BigqueryTarget
-
-from .external_daily_snapshot import ExternalDailySnapshot
+from spotify_tensorflow.luigi.external_daily_snapshot import ExternalDailySnapshot
 
 
 class BigQueryDailySnapshot(ExternalDailySnapshot):
@@ -29,15 +28,34 @@ class BigQueryDailySnapshot(ExternalDailySnapshot):
     dataset = luigi.Parameter()
     table = luigi.Parameter(default=None)
 
+    def __init__(self, *args, **kwargs):
+        super(ExternalDailySnapshot, self).__init__(*args, **kwargs)
+        if self.dataset == "":
+            raise ValueError("non-empty dataset parameter must be provided.")
+
     def output(self):
-        date_replace = str(self.date).replace("-", "")
-        table = self.table if self.table else self.dataset
-        table_name = "%s_%s" % (table, date_replace)
+        table_name = self._normalize_table_name(self.dataset, self.table,
+                                                suffix=self._sanitize_date(self.date))
         return BigqueryTarget(self.project, self.dataset, table_name)
+
+    @staticmethod
+    def _sanitize_date(date):
+        return str(date).replace("-", "")
+
+    @staticmethod
+    def _normalize_table_name(dataset, table, suffix):
+        if table:
+            result = table
+        elif dataset:
+            result = dataset
+        else:
+            raise ValueError("Either table or dataset must be provided.")
+
+        return "{}_{}".format(result, suffix)
 
 
 def table_str(bq_target):
     # type: (BigqueryTarget) -> str
     """Given a BigqueryTarget returns a string table reference."""
     t = bq_target.table
-    return "%s.%s.%s" % (t.project_id, t.dataset_id, t.table_id)
+    return "{}.{}.{}".format(t.project_id, t.dataset_id, t.table_id)
