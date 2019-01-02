@@ -19,6 +19,7 @@ from __future__ import absolute_import, division, print_function
 
 import luigi
 from luigi.local_target import LocalTarget
+from mock import patch
 from spotify_tensorflow.luigi.tfdv import TFDVGenerateStatsTask
 from tensorflow.python.platform import test
 
@@ -26,6 +27,11 @@ from tensorflow.python.platform import test
 class ExternalData(luigi.ExternalTask):
     def output(self):
         return LocalTarget("some/file/somewhere")
+
+
+class ExternalDataWindows(luigi.ExternalTask):
+    def output(self):
+        return LocalTarget("c:\\\\some\\file\\somewhere")
 
 
 class MyLocalTFDV(TFDVGenerateStatsTask):
@@ -54,6 +60,14 @@ class MyTFDVWithCustomFilePatternDeep(TFDVGenerateStatsTask):
 
     def file_pattern(self):
         return {"input": "somewhere/deep/part-*"}
+
+
+class MyTFDVWithCustomFilePatternDeepWindows(TFDVGenerateStatsTask):
+    def requires(self):
+        return ExternalDataWindows()
+
+    def file_pattern(self):
+        return {"input": "somewhere\\deep\\part-*"}
 
 
 class MyTFDVWithCustomFilePatternWrong(TFDVGenerateStatsTask):
@@ -120,6 +134,15 @@ tensorflow-metadata==0.9.0
         output_args = task._get_output_args()
         assert len(output_args) == 1
         assert output_args[0].endswith("some/file/somewhere/somewhere/deep/_stats.pb")
+
+    @staticmethod
+    @patch("os.sep", "\\")
+    def test_get_output_args_with_custom_deep_windows_file_pattern():
+        task = MyTFDVWithCustomFilePatternDeepWindows()
+        output_args = task._get_output_args()
+        assert len(output_args) == 1
+        assert output_args[0].endswith(
+            "c:\\\\some\\file\\somewhere\\somewhere\\deep\\_stats.pb")
 
     @staticmethod
     def test_get_output_args_with_custom_wrong_file_pattern():

@@ -17,6 +17,7 @@
 #
 
 import logging
+import os
 import tempfile
 
 import luigi
@@ -64,17 +65,29 @@ class TFDVGenerateStatsTask(TFXBaseTask):
         if len(file_pattern_dict) not in {0, 1}:
             raise Exception("Only either 0 or 1 entry in file_pattern() is currently "
                             "supported.")
-        file_pattern = None if len(file_pattern_dict) == 0 else list(file_pattern_dict.values())[0]
-        file_pattern_dir = TFDVGenerateStatsTask._get_dir_from_file_pattern(file_pattern)
+        file_pattern = "" if len(file_pattern_dict) == 0 else list(file_pattern_dict.values())[0]
+
+        # We would like to allow for non-local gs and s3 targets
+        # on non-Unix platforms, but also gracefully support local
+        # paths on non-Unix platforms.
+        #
+        #  os.sep  file_pattern    sep
+        #    /         /        =>  /
+        #    \         /        =>  /
+        #    \         \        =>  \
+        #
+        sep = "/" if "/" in file_pattern else os.sep
+
+        file_pattern_dir = TFDVGenerateStatsTask._get_dir_from_file_pattern(file_pattern, sep=sep)
 
         base_uri = get_uri(input_targets[0])
-        stats_path = "{}/{}{}".format(base_uri.rstrip("/"), file_pattern_dir,
-                                      self.stats_file_name)
+        stats_path = "{}{}{}{}".format(base_uri.rstrip("/"), sep, file_pattern_dir,
+                                       self.stats_file_name)
 
         return ["--output={}".format(stats_path)]
 
     @staticmethod
-    def _get_dir_from_file_pattern(file_pattern):
+    def _get_dir_from_file_pattern(file_pattern, sep=os.sep):
         """
         `file_pattern` may contain some directories. We want to get the directory
         which closest to the actual data.
@@ -85,14 +98,21 @@ class TFDVGenerateStatsTask(TFXBaseTask):
         "some/dir/part-*" -> "/some/dir/"
         "some/dir*/file.txt" -> Exception
         ```
+
+        And for non-Unix platforms:
+        ```
+        "some\\dir\\part-*" -> "\\some\\dir\\"
+        "some\\dir*\\file.txt" -> Exception
+        ```
         """
         if file_pattern is None:
             return ""
 
         file_pattern_dir = ""
-        if "/" in file_pattern:
-            file_pattern_dir = file_pattern.rsplit("/", 1)[0]
-            file_pattern_dir += "/"
+
+        if sep in file_pattern:
+            file_pattern_dir = file_pattern.rsplit(sep, 1)[0]
+            file_pattern_dir += sep
 
         if "*" in file_pattern_dir:
             raise Exception("globs not currently supported for directories in [{}]".format(
