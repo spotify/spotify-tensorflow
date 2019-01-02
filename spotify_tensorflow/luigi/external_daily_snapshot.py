@@ -21,9 +21,16 @@ from __future__ import absolute_import, division, print_function
 import datetime
 import logging
 from typing import Dict  # noqa: F401
+import warnings
 
 import luigi
 from six.moves import xrange
+
+# Note: Using generic `Warning` instead of `DeprecationWarning`, as the latter is
+#  filtered by default and therefore not visible to the user.
+warnings.warn("spotify_tensorflow.luigi.external_daily_snapshot is deprecated in favor of "
+              "luigi.contrib.external_daily_snapshot for luigi>=2.8.2",
+              Warning)
 
 
 class ExternalDailySnapshot(luigi.ExternalTask):
