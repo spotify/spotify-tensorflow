@@ -88,8 +88,24 @@ class DummyUserTftTask(TFTransformTask):
         return GCSTarget(path="output_uri")
 
 
-class TFTransformTaskTest(TestCase):
+class NoSchemaTftTask(TFTransformTask):
+    project = "dummy"
+    staging_location = "staging_uri"
+    python_script = "mytft.py"
+    requirements_file = "tft_requirement.txt"
+    job_name = "dummyusertfttask-test"
 
+    def requires(self):
+        return {"input": DummyRawFeature()}
+
+    def args(self):
+        return ["--foo=bar"]
+
+    def output(self):
+        return GCSTarget(path="output_uri")
+
+
+class TFTransformTaskTest(TestCase):
     def test_task(self):
         task = DummyUserTftTask()
 
@@ -110,3 +126,10 @@ class TFTransformTaskTest(TestCase):
         actual = task._mk_cmd_line()
         actual.sort()
         self.assertEquals(actual, expected)
+
+    def test_no_schema_defined_task(self):
+        try:
+            NoSchemaTftTask()
+            self.assertTrue(False)
+        except TypeError:
+            self.assertTrue(True)

@@ -17,4 +17,5 @@ AUTHORS
 ChangeLog
 .DS_Store
 .mypy_cache
+tmp/
 .pytest_cache/

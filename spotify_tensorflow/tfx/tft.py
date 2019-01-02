@@ -20,6 +20,7 @@ from __future__ import absolute_import, division, print_function
 
 import argparse
 import os
+import sys
 from abc import abstractmethod, ABCMeta
 from typing import Dict, Union, Any, List  # noqa: F401
 
@@ -39,7 +40,6 @@ from tensorflow_transform.tf_metadata import dataset_schema
 
 @six.add_metaclass(ABCMeta)
 class TFTransform:
-
     """Abstract class for TFX.TFT"""
 
     @abstractmethod
@@ -65,7 +65,7 @@ class TFTransform:
                     transform_fn_dir=transform_fn_dir)
 
     @classmethod
-    def run(cls):
+    def run(cls, args=None):
         if not issubclass(cls, TFTransform):
             raise ValueError("Class {} should be inherit from TFT".format(cls))
 
@@ -95,7 +95,9 @@ class TFTransform:
             required=False,
             help="path to the saved transform function")
 
-        tft_args, pipeline_args = parser.parse_known_args()
+        if args is None:
+            args = sys.argv[1:]
+        tft_args, pipeline_args = parser.parse_known_args(args=args)
 
         p = cls()
         p.transform_data(pipeline_args=pipeline_args,
@@ -137,14 +139,14 @@ def tftransform(pipeline_args,                          # type: List[str]
     assert_not_empty_string(schema_file)
     assert_not_empty_string(output_dir)
 
-    feature_spec = schema_txt_to_feature_spec(schema_file)
-    raw_schema = dataset_schema.from_feature_spec(feature_spec)
+    raw_feature_spec = schema_txt_to_feature_spec(schema_file)
+    raw_schema = dataset_schema.from_feature_spec(raw_feature_spec)
     raw_data_metadata = dataset_metadata.DatasetMetadata(raw_schema)
     coder = ExampleProtoCoder(raw_data_metadata.schema)
 
     transformed_train_output_dir = os.path.join(output_dir, "training")
     transformed_eval_output_dir = os.path.join(output_dir, "evaluation")
-    transformed_fn_output_dir = os.path.join(output_dir, "transform_fn")
+    transformed_fn_output_dir = output_dir
 
     if not any(i.startswith("--job_name") for i in pipeline_args):
         import getpass
@@ -164,11 +166,11 @@ def tftransform(pipeline_args,                          # type: List[str]
             raw_train_data = (
                     pipeline
                     | "ReadTrainData" >> tfrecordio.ReadFromTFRecord(training_data)
-                    | "DecodeTrain" >> beam.Map(coder.decode))
+                    | "DecodeTrainData" >> beam.Map(coder.decode))
 
             ((transformed_train_data, transformed_train_metadata), transform_fn) = (
                     (raw_train_data, raw_data_metadata)
-                    | ("AnalyzeAndTransform" >> beam_impl.AnalyzeAndTransformDataset(preprocessing_fn)))  # noqa: E501
+                    | ("AnalyzeAndTransformTrainData" >> beam_impl.AnalyzeAndTransformDataset(preprocessing_fn)))  # noqa: E501
 
             _ = (   # noqa: F841
                     transform_fn
@@ -178,10 +180,10 @@ def tftransform(pipeline_args,                          # type: List[str]
             transformed_train_coder = ExampleProtoCoder(transformed_train_metadata.schema)
             _ = (   # noqa: F841
                     transformed_train_data
-                    | "EncodeTrainData" >> beam.Map(transformed_train_coder.encode)
-                    | "WriteTrainData" >> tfrecordio.WriteToTFRecord(os.path.join(transformed_train_output_dir, "part"),  # noqa: E501
-                                                                     compression_type=compression_type,  # noqa: E501
-                                                                     file_name_suffix=".tfrecords"))
+                    | "EncodeTransformedTrainData" >> beam.Map(transformed_train_coder.encode)
+                    | "WriteTransformedTrainData" >> tfrecordio.WriteToTFRecord(os.path.join(transformed_train_output_dir, "part"),  # noqa: E501
+                                                                                compression_type=compression_type,  # noqa: E501
+                                                                                file_name_suffix=".tfrecords"))  # noqa: E501
         else:
             if transform_fn_dir is None:
                 raise ValueError("Either training_data or transformed_fn needs to be provided")
@@ -192,20 +194,20 @@ def tftransform(pipeline_args,                          # type: List[str]
             # if evaluation_data exists, apply the transform_fn to the evaluation data
             raw_eval_data = (
                     pipeline
-                    | "ReadEvalData" >> tfrecordio.ReadFromTFRecord(evaluation_data,
-                                                                    coder=ExampleProtoCoder(raw_data_metadata.schema),  # noqa: E501
-                                                                    validate=True))
+                    | "ReadEvalData" >> tfrecordio.ReadFromTFRecord(evaluation_data)
+                    | "DecodeEvalData" >> beam.Map(coder.decode))
+
             (transformed_eval_data, transformed_eval_metadata) = (
                     ((raw_eval_data, raw_data_metadata), transform_fn)
-                    | beam_impl.TransformDataset())
+                    | "TransformEvalData" >> beam_impl.TransformDataset())
 
             transformed_eval_coder = ExampleProtoCoder(transformed_eval_metadata.schema)
             _ = (   # noqa: F841
                     transformed_eval_data
-                    | "EncodeEvalData" >> beam.Map(transformed_eval_coder.encode)
-                    | "WriteEvalData" >> tfrecordio.WriteToTFRecord(os.path.join(transformed_eval_output_dir, "part"),  # noqa: E501
-                                                                    compression_type=compression_type,  # noqa: E501
-                                                                    file_name_suffix=".tfrecords"))  # noqa: E501
+                    | "EncodeTransformedEvalData" >> beam.Map(transformed_eval_coder.encode)
+                    | "WriteTransformedEvalData" >> tfrecordio.WriteToTFRecord(os.path.join(transformed_eval_output_dir, "part"),  # noqa: E501
+                                                                               compression_type=compression_type,  # noqa: E501
+                                                                               file_name_suffix=".tfrecords"))  # noqa: E501
     result = pipeline.run().wait_until_finish()
 
     return result

@@ -17,12 +17,13 @@
 #  under the License.
 
 import tensorflow as tf
-from spotify_tensorflow.tf_schema_utils import SchemaToFeatureSpec, FeatureSpecToSchema
 
 
 class TFSchemaUtilsTest(tf.test.TestCase):
 
     def test_round_trip(self):
+        from spotify_tensorflow.tf_schema_utils import SchemaToFeatureSpec, FeatureSpecToSchema
+
         feature_spec = {
             "scalar_feature_1": tf.FixedLenFeature(shape=[], dtype=tf.int64),
             "scalar_feature_2": tf.FixedLenFeature(shape=[], dtype=tf.int64),
@@ -36,3 +37,27 @@ class TFSchemaUtilsTest(tf.test.TestCase):
         inferred_schema = FeatureSpecToSchema.apply(feature_spec)
         inferred_feature_spec = SchemaToFeatureSpec.apply(inferred_schema)
         self.assertEqual(inferred_feature_spec, feature_spec)
+
+    def test_schema_txt_to_feature_spec(self):
+        from tempfile import NamedTemporaryFile
+        from spotify_tensorflow.tf_schema_utils import schema_txt_to_feature_spec
+
+        schema_txt = """
+            feature {
+                name: "test_feature"
+                value_count {
+                    min: 1
+                    max: 1
+                }
+                type: FLOAT
+                presence {
+                    min_count: 1
+                }
+            }
+        """
+
+        with NamedTemporaryFile() as f:
+            f.write(schema_txt)
+            f.seek(0)
+            feature_spec = schema_txt_to_feature_spec(f.name)
+            self.assertEqual(feature_spec, {"test_feature": tf.VarLenFeature(dtype=tf.float32)})
