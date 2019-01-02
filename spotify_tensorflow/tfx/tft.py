@@ -24,26 +24,22 @@ from abc import abstractmethod, ABCMeta
 from typing import Dict, Union, Any, List  # noqa: F401
 
 import apache_beam as beam
-import google.protobuf.text_format
 import six
-import tensorflow as tf  # noqa: F401
-import tensorflow_transform as tft
 from apache_beam.io import tfrecordio
 from apache_beam.io.filesystem import CompressionTypes
-from apache_beam.io.filesystems import FileSystems
 from apache_beam.runners import PipelineState  # noqa: F401
+from spotify_tensorflow.tf_schema_utils import schema_txt_to_feature_spec
 from spotify_tensorflow.tfx.utils import assert_not_empty_string, assert_not_none
-from tensorflow.python.lib.io import file_io
-from tensorflow_metadata.proto.v0 import schema_pb2
 from tensorflow_transform.beam import impl as beam_impl
 from tensorflow_transform.beam.tft_beam_io import transform_fn_io
 from tensorflow_transform.coders import ExampleProtoCoder
-from tensorflow_transform.tf_metadata import dataset_metadata, schema_utils
+from tensorflow_transform.tf_metadata import dataset_metadata
 from tensorflow_transform.tf_metadata import dataset_schema
 
 
 @six.add_metaclass(ABCMeta)
 class TFTransform:
+
     """Abstract class for TFX.TFT"""
 
     @abstractmethod
@@ -52,23 +48,21 @@ class TFTransform:
         pass
 
     def transform_data(self,
-                       dataflow_args,
+                       pipeline_args,
                        temp_location,
+                       schema_file,
+                       output_dir,
                        training_data,
-                       training_data_transformed_dst,
                        evaluation_data,
-                       evaluation_data_transformed_dst,
-                       feature_spec,
-                       transform_fn_dst):
-        tftransform(dataflow_args,
-                    temp_location,
-                    self.get_preprocessing_fn(),
-                    feature_spec,
-                    transform_fn_dst,
-                    training_data,
-                    training_data_transformed_dst,
-                    evaluation_data,
-                    evaluation_data_transformed_dst)
+                       transform_fn_dir):
+        tftransform(pipeline_args=pipeline_args,
+                    temp_location=temp_location,
+                    preprocessing_fn=self.get_preprocessing_fn(),
+                    schema_file=schema_file,
+                    output_dir=output_dir,
+                    training_data=training_data,
+                    evaluation_data=evaluation_data,
+                    transform_fn_dir=transform_fn_dir)
 
     @classmethod
     def run(cls):
@@ -77,21 +71,17 @@ class TFTransform:
 
         parser = argparse.ArgumentParser()
         parser.add_argument(
-            "--training_data_src",
-            required=True,
+            "--training_data",
+            required=False,
             help="path to the raw feature for training")
         parser.add_argument(
-            "--evaluation_data_src",
+            "--evaluation_data",
             required=False,
             help="path to the raw feature for evaluation")
         parser.add_argument(
-            "--training_data_dst",
+            "--output_dir",
             required=True,
-            help="path to the transformed feature for training")
-        parser.add_argument(
-            "--evaluation_data_dst",
-            required=True,
-            help="path to the transformed feature for evaluation")
+            help="output dir for data transformation")
         parser.add_argument(
             "--schema_file",
             required=True,
@@ -99,132 +89,123 @@ class TFTransform:
         parser.add_argument(
             "--temp_location",
             required=True,
-            help="temporary location for tf.transform job")
+            help="temporary working dir for tf.transform job")
         parser.add_argument(
-            "--transform_fn_dst",
+            "--transform_fn_dir",
             required=False,
-            help="path to the output transform function")
+            help="path to the saved transform function")
 
-        tft_args, dataflow_args = parser.parse_known_args()
-
-        # parse schema and convert it to feature spec
-        schema = schema_pb2.Schema()
-        schema_text = file_io.read_file_to_string(tft_args.schema_file)
-        google.protobuf.text_format.Parse(schema_text, schema)
-        feature_spec = schema_utils.schema_as_feature_spec(schema).feature_spec
+        tft_args, pipeline_args = parser.parse_known_args()
 
         p = cls()
-        p.transform_data(dataflow_args,
-                         tft_args.temp_location,
-                         tft_args.training_data_src,
-                         tft_args.training_data_dst,
-                         tft_args.evaluation_data_src,
-                         tft_args.evaluation_data_dst,
-                         feature_spec,
-                         tft_args.transform_fn_dst)
+        p.transform_data(pipeline_args=pipeline_args,
+                         temp_location=tft_args.temp_location,
+                         schema_file=tft_args.schema_file,
+                         output_dir=tft_args.output_dir,
+                         training_data=tft_args.training_data,
+                         evaluation_data=tft_args.evaluation_data,
+                         transform_fn_dir=tft_args.transform_fn_dir)
 
 
-def tftransform(dataflow_args,  # type: List[str]
-                temp_location,  # type: str
-                preprocessing_fn,  # type: Any
-                feature_spec,  # type: Dict[str, Union[tf.FixedLenFeature, tf.VarLenFeature]]  # noqa: E501
-                transform_fn_dst,  # type: str
-                training_data,  # type: str
-                training_data_transformed_dst_dir,  # type: str
-                evaluation_data=None,  # type: Union[None, str]
-                evaluation_data_transformed_dst_dir=None,  # type: Union[None, str]
+def tftransform(pipeline_args,                          # type: List[str]
+                temp_location,                          # type: str
+                preprocessing_fn,                       # type: Any
+                schema_file,                            # type: str
+                output_dir,                             # type: str
+                training_data=None,                     # type: Union[None, str]
+                evaluation_data=None,                   # type: Union[None, str]
+                transform_fn_dir=None,                  # type: Union[None, str]
                 compression_type=CompressionTypes.AUTO  # type: str
                 ):  # type: (...) -> PipelineState
     """
     Generic tf.transform pipeline that takes tf.{example, record} training and evaluation
     datasets and outputs transformed data together with transform function Saved Model.
 
-    :param dataflow_args: un-parsed Dataflow arguments
-    :param temp_location: temporary location for Dataflow
+    :param pipeline_args: un-parsed Dataflow arguments
+    :param temp_location: temporary location for dataflow job working dir
     :param preprocessing_fn: tf.transform preprocessing function
-    :param feature_spec: TensorFlow feature spec
-    :param transform_fn_dst: location for the transform function Saved Model
-    :param training_data: path/regex of the training data
-    :param training_data_transformed_dst_dir: directory for the transformed training data
-    :param evaluation_data: path/regex of the evaluation data
-    :param evaluation_data_transformed_dst_dir: directory for the transformed evaluation data
+    :param schema_file: path to the raw feature schema text file
+    :param output_dir: output dir for transformed data and function
+    :param training_data: path to the training data
+    :param evaluation_data: path to the evaluation data
+    :param transform_fn_dir: dir to previously saved transformation function to apply
     :param compression_type: compression type for writing of tf.records
     :return final state of the Beam pipeline
     """
     assert_not_empty_string(temp_location)
     assert_not_none(preprocessing_fn)
-    assert_not_none(feature_spec)
-    assert_not_empty_string(transform_fn_dst)
-    assert_not_empty_string(training_data)
-    assert_not_empty_string(training_data_transformed_dst_dir)
+    assert_not_empty_string(schema_file)
+    assert_not_empty_string(output_dir)
 
+    feature_spec = schema_txt_to_feature_spec(schema_file)
     raw_schema = dataset_schema.from_feature_spec(feature_spec)
     raw_data_metadata = dataset_metadata.DatasetMetadata(raw_schema)
+    coder = ExampleProtoCoder(raw_data_metadata.schema)
 
-    # convert our temp-location to sth Beam can understand
-    if not any(i.startswith("--temp_location=") for i in dataflow_args):
-        dataflow_args.append("--temp_location={}".format(temp_location))
+    transformed_train_output_dir = os.path.join(output_dir, "training")
+    transformed_eval_output_dir = os.path.join(output_dir, "evaluation")
+    transformed_fn_output_dir = os.path.join(output_dir, "transform_fn")
 
-    if not any(i.startswith("--job_name") for i in dataflow_args):
+    if not any(i.startswith("--job_name") for i in pipeline_args):
         import getpass
         import time
-        dataflow_args.append("--job_name=tf-transform-{}-{}".format(getpass.getuser(),
+        pipeline_args.append("--job_name=tf-transform-{}-{}".format(getpass.getuser(),
                                                                     int(time.time())))
 
-    tft_model_path = os.path.join(transform_fn_dst,
-                                  tft.TFTransformOutput.TRANSFORM_FN_DIR,
-                                  "saved_model.pb")
-
-    if FileSystems.exists(tft_model_path):
-        raise ValueError(
-            "Transform function destination {} already exists!".format(transform_fn_dst))
-
-    pipeline = beam.Pipeline(argv=dataflow_args)
+    pipeline = beam.Pipeline(argv=pipeline_args)
     with beam_impl.Context(temp_dir=temp_location):
-        coder = ExampleProtoCoder(raw_data_metadata.schema)
-        raw_data = (
-                pipeline
-                | "ReadTrainData" >> tfrecordio.ReadFromTFRecord(training_data)  # noqa: E501
-                | "DecodeTrain" >> beam.Map(coder.decode))
+        if training_data is not None:
+            # if training data is provided, transform_fn_dir will be ignored
+            if transform_fn_dir is not None:
+                import warnings
+                warnings.warn("Transform_fn_dir will be ignored since training_data is provided")
 
-        raw_dataset = (raw_data, raw_data_metadata)
-        transformed_dataset, transform_fn = (
-                raw_dataset
-                | "AnalyzeAndTransform" >> beam_impl.AnalyzeAndTransformDataset(preprocessing_fn))
+            # compute the transform_fn and apply to the training data
+            raw_train_data = (
+                    pipeline
+                    | "ReadTrainData" >> tfrecordio.ReadFromTFRecord(training_data)
+                    | "DecodeTrain" >> beam.Map(coder.decode))
 
-        transformed_data, transformed_metadata = transformed_dataset
-        transformed_data_coder = ExampleProtoCoder(transformed_metadata.schema)
+            ((transformed_train_data, transformed_train_metadata), transform_fn) = (
+                    (raw_train_data, raw_data_metadata)
+                    | ("AnalyzeAndTransform" >> beam_impl.AnalyzeAndTransformDataset(preprocessing_fn)))  # noqa: E501
 
-        _ = (
-                transformed_data
-                | "EncodeTrainData" >> beam.Map(transformed_data_coder.encode)
-                | "WriteTrainData" >> tfrecordio.WriteToTFRecord(os.path.join(training_data_transformed_dst_dir, "part"),  # noqa: E501
-                                                                 compression_type=compression_type,  # noqa: E501
-                                                                 file_name_suffix=".tfrecords"))  # noqa: E501
+            _ = (   # noqa: F841
+                    transform_fn
+                    | "WriteTransformFn" >>
+                    transform_fn_io.WriteTransformFn(transformed_fn_output_dir))
+
+            transformed_train_coder = ExampleProtoCoder(transformed_train_metadata.schema)
+            _ = (   # noqa: F841
+                    transformed_train_data
+                    | "EncodeTrainData" >> beam.Map(transformed_train_coder.encode)
+                    | "WriteTrainData" >> tfrecordio.WriteToTFRecord(os.path.join(transformed_train_output_dir, "part"),  # noqa: E501
+                                                                     compression_type=compression_type,  # noqa: E501
+                                                                     file_name_suffix=".tfrecords"))
+        else:
+            if transform_fn_dir is None:
+                raise ValueError("Either training_data or transformed_fn needs to be provided")
+            # load the transform_fn
+            transform_fn = pipeline | transform_fn_io.ReadTransformFn(transform_fn_dir)
+
         if evaluation_data is not None:
-            assert evaluation_data
-            assert evaluation_data_transformed_dst_dir
+            # if evaluation_data exists, apply the transform_fn to the evaluation data
             raw_eval_data = (
                     pipeline
                     | "ReadEvalData" >> tfrecordio.ReadFromTFRecord(evaluation_data,
                                                                     coder=ExampleProtoCoder(raw_data_metadata.schema),  # noqa: E501
                                                                     validate=True))
-            raw_eval_dataset = (raw_eval_data, raw_data_metadata)
-            transformed_test_dataset = (
-                    (raw_eval_dataset, transform_fn) | beam_impl.TransformDataset())
-            transformed_eval_data, _ = transformed_test_dataset
+            (transformed_eval_data, transformed_eval_metadata) = (
+                    ((raw_eval_data, raw_data_metadata), transform_fn)
+                    | beam_impl.TransformDataset())
 
-            _ = (
+            transformed_eval_coder = ExampleProtoCoder(transformed_eval_metadata.schema)
+            _ = (   # noqa: F841
                     transformed_eval_data
-                    | "EncodeEvalData" >> beam.Map(transformed_data_coder.encode)
-                    | "WriteEvalData" >> tfrecordio.WriteToTFRecord(os.path.join(evaluation_data_transformed_dst_dir, "part"),  # noqa: E501
+                    | "EncodeEvalData" >> beam.Map(transformed_eval_coder.encode)
+                    | "WriteEvalData" >> tfrecordio.WriteToTFRecord(os.path.join(transformed_eval_output_dir, "part"),  # noqa: E501
                                                                     compression_type=compression_type,  # noqa: E501
                                                                     file_name_suffix=".tfrecords"))  # noqa: E501
-
-        _ = (   # noqa: F841
-                transform_fn
-                | "WriteTransformFn" >>
-                transform_fn_io.WriteTransformFn(transform_fn_dst))
     result = pipeline.run().wait_until_finish()
 
     return result

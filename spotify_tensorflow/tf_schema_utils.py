@@ -19,9 +19,12 @@ from __future__ import absolute_import, division, print_function
 
 from typing import Union, Tuple, Dict  # noqa: F401
 
+import google.protobuf.text_format
 import tensorflow as tf
 from tensorflow.python.lib.io import file_io
+from tensorflow_metadata.proto.v0 import schema_pb2
 from tensorflow_metadata.proto.v0.schema_pb2 import INT, FLOAT, BYTES, Schema
+from tensorflow_transform.tf_metadata import schema_utils
 
 
 class TFTypeMapper(object):
@@ -231,3 +234,14 @@ class FeatureSpecToSchema(object):
         if f.type == FLOAT:
             f.domain.floats.min = feature_val.dtype.min
             f.domain.floats.max = feature_val.dtype.max
+
+
+def schema_txt_to_feature_spec(schema_txt_file):
+    """
+    Convert from a tf.metadata Schema text file to a TensorFlow feature_spec object.
+    """
+    schema = schema_pb2.Schema()
+    schema_text = file_io.read_file_to_string(schema_txt_file)
+    google.protobuf.text_format.Parse(schema_text, schema)
+    feature_spec = schema_utils.schema_as_feature_spec(schema).feature_spec
+    return feature_spec
