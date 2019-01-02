@@ -23,13 +23,60 @@ import json
 import logging
 import subprocess
 
+from luigi import LocalTarget
+from mock import patch
 from nose.tools import raises
 import responses
-from spotify_tensorflow.luigi.utils import _fetch_file, fetch_tfdv_whl, run_with_logging
+from spotify_tensorflow.luigi.utils import get_uri, is_gcs_path, _fetch_file, fetch_tfdv_whl, \
+    run_with_logging, to_snake_case
 from tensorflow.python.platform import test
 
 
 class LuigiUtilsTest(test.TestCase):
+
+    @staticmethod
+    def test_to_snake_case():
+        assert "a.b.c" == to_snake_case("A.B.C")
+        assert "a.bc" == to_snake_case("A.BC")
+        assert "a.b_c" == to_snake_case("A.B_C")
+        assert "base_class" == to_snake_case("BaseClass")
+        assert "base_class_y" == to_snake_case("BaseClassY")
+
+        # Is this really desired behavior?
+        assert "a._base_class" == to_snake_case("A.BaseClass")
+
+    @staticmethod
+    def test_is_gcs_path():
+        assert is_gcs_path("gs://something")
+        assert is_gcs_path("gs://something/else")
+        assert is_gcs_path("GS://something/else")
+        assert is_gcs_path("gS://something")
+        assert is_gcs_path("gS://something ")
+        assert is_gcs_path(" gS://something ")
+        assert not is_gcs_path("file://something")
+        assert not is_gcs_path("something")
+
+    @staticmethod
+    def test_get_uri():
+
+        class TargetWithURI(LocalTarget):
+            def uri(self):
+                return 'i://have/a/uri'
+
+        class TargetWithPath(LocalTarget):
+            pass
+
+        class NotATarget:
+            pass
+
+        assert get_uri(TargetWithURI('fake/path')) == 'i://have/a/uri'
+        assert get_uri(TargetWithPath('a/path')) == 'a/path'
+
+        try:
+            get_uri(NotATarget())
+            assert False
+        except ValueError as e:
+            assert "Unknown input target type" in e.message
 
     @staticmethod
     def test_run_with_logging():
@@ -67,6 +114,7 @@ class LuigiUtilsTest(test.TestCase):
         _fetch_file("http://this-is-a-test.com/file.txt")
 
     @staticmethod
+    @patch("tensorflow_data_validation.__version__", "0.11.0")
     @responses.activate
     def test_fetch_tfdv_whl():
         test_wheel = {"I": "is-a-wheel"}
@@ -96,8 +144,38 @@ class LuigiUtilsTest(test.TestCase):
 <!--SERIAL 4483951-->
 """)
 
+        # Test with explicit version given
         local_whl = fetch_tfdv_whl("0.11.0")
-
         assert test_wheel == json.load(open(local_whl, "r"))
         assert local_whl.endswith(
             "tensorflow_data_validation-0.11.0-cp27-cp27mu-manylinux1_x86_64.whl")
+
+        # Test without providing version
+        local_whl = fetch_tfdv_whl()
+        assert test_wheel == json.load(open(local_whl, "r"))
+        assert local_whl.endswith(
+            "tensorflow_data_validation-0.11.0-cp27-cp27mu-manylinux1_x86_64.whl")
+
+    @staticmethod
+    @responses.activate
+    def test_fetch_tfdv_whl_bad_response():
+        test_wheel = {"I": "is-a-wheel"}
+        responses.add(responses.GET,
+                      "https://files.pythonhosted.org/packages/f0/f1"
+                      "/c3441933b8a5fe0737dab7850804c7cec3f5fe7b2cc609dd1ce5987df768"
+                      "/tensorflow_data_validation-0.11.0-cp27-cp27mu-manylinux1_x86_64.whl",
+                      status=200, json=test_wheel)
+
+        responses.add(responses.GET, "https://pypi.org/simple/tensorflow_data_validation",
+                      status=200, body="""
+<!DOCTYPE html>
+<html>
+... garbled response ...
+unparseable
+""")
+
+        try:
+            fetch_tfdv_whl("0.11.0")
+            assert False
+        except Exception as e:
+            assert "Problem fetching package. Couldn't parse listing" in e.message
