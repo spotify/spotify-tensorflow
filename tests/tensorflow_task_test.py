@@ -17,19 +17,25 @@
 
 from __future__ import absolute_import, division, print_function
 
+import os
+import tempfile
 from unittest import TestCase
+from subprocess import CalledProcessError
 
 import luigi
+from luigi import LocalTarget
 from luigi.contrib.gcs import GCSTarget
 from spotify_tensorflow.luigi.tensorflow_task import TensorFlowTask
 
 
 class MockGCSTarget(GCSTarget):
+
     def __init__(self, path):
         self.path = path
 
 
 class TestRequires(luigi.ExternalTask):
+
     def output(self):
         return MockGCSTarget("gs://training/data")
 
@@ -71,7 +77,9 @@ class TensorflowTaskTest(TestCase):
                          model_package_path="/path/to/package",
                          job_dir="gs://job/dir",
                          ml_engine_conf="/path/conf.yaml",
-                         blocking=False,
+                         blocking=True,
+                         runtime_version="foo",
+                         scale_tier="bar",
                          tf_debug=True)
         expected = [
             "gcloud", "ml-engine",
@@ -81,6 +89,9 @@ class TensorflowTaskTest(TestCase):
             "--region=europe-west1",
             "--config=/path/conf.yaml",
             "--job-dir=gs://job/dir",
+            "--stream-logs",
+            "--runtime-version=foo",
+            "--scale-tier=bar",
             "--package-path=/path/to/package",
             "--module-name=models.my_tf_model",
             "--verbosity=debug",
@@ -93,3 +104,44 @@ class TensorflowTaskTest(TestCase):
         self.assertEquals(actual[:6], expected[:6])
         self.assertRegexpMatches(actual[6], expected[6])
         self.assertEquals(actual[7:], expected[7:])
+
+    def test_run_success(self):
+
+        tmp_dir_path = tempfile.mkdtemp()
+
+        class SuperDummyTask(DummyTask):
+
+            def _mk_cmd(self):
+                return ["echo", "hello"]
+
+            def requires(self):
+                return LocalTarget(tmp_dir_path)
+
+        task = SuperDummyTask(cloud=False,
+                              job_dir=tmp_dir_path,
+                              model_package_path="/path/to/package")
+        task.run()
+
+        assert os.path.exists(os.path.join(tmp_dir_path, "_SUCCESS"))
+
+    def test_run_fail(self):
+
+        tmp_dir_path = tempfile.mkdtemp()
+
+        class SuperDummyTask(DummyTask):
+
+            def _mk_cmd(self):
+                return ["cp", "some", "crap"]
+
+            def requires(self):
+                return LocalTarget(tmp_dir_path)
+
+        task = SuperDummyTask(cloud=False,
+                              job_dir=tmp_dir_path,
+                              model_package_path="/path/to/package")
+
+        try:
+            task.run()
+            assert False
+        except CalledProcessError:
+            assert not os.path.exists(os.path.join(tmp_dir_path, "_SUCCESS"))
