@@ -237,6 +237,7 @@ class FeatureSpecToSchema(object):
 
 
 def schema_txt_to_feature_spec(schema_txt_file):
+    # type: (str) -> Dict[str, Union[tf.FixedLenFeature, tf.VarLenFeature, tf.SparseFeature]]
     """
     Convert from a tf.metadata Schema text file to a TensorFlow feature_spec object.
     """

@@ -20,6 +20,7 @@ from __future__ import absolute_import, division, print_function
 
 import argparse
 import os
+import sys
 from abc import abstractmethod, ABCMeta
 from typing import Dict, Union, Any, List  # noqa: F401
 
@@ -65,10 +66,7 @@ class TFTransform:
                     transform_fn_dir=transform_fn_dir)
 
     @classmethod
-    def run(cls):
-        if not issubclass(cls, TFTransform):
-            raise ValueError("Class {} should be inherit from TFT".format(cls))
-
+    def create_parser(cls):
         parser = argparse.ArgumentParser()
         parser.add_argument(
             "--training_data",
@@ -94,8 +92,18 @@ class TFTransform:
             "--transform_fn_dir",
             required=False,
             help="path to the saved transform function")
+        return parser
 
-        tft_args, pipeline_args = parser.parse_known_args()
+    @classmethod
+    def run(cls, args=None):
+        if not issubclass(cls, TFTransform):
+            raise ValueError("Class {} should be inherit from TFT".format(cls))
+
+        parser = cls.create_parser()
+
+        if args is None:
+            args = sys.argv[1:]
+        tft_args, pipeline_args = parser.parse_known_args(args=args)
 
         p = cls()
         p.transform_data(pipeline_args=pipeline_args,
@@ -144,7 +152,7 @@ def tftransform(pipeline_args,                          # type: List[str]
 
     transformed_train_output_dir = os.path.join(output_dir, "training")
     transformed_eval_output_dir = os.path.join(output_dir, "evaluation")
-    transformed_fn_output_dir = os.path.join(output_dir, "transform_fn")
+    transformed_fn_output_dir = output_dir
 
     if not any(i.startswith("--job_name") for i in pipeline_args):
         import getpass

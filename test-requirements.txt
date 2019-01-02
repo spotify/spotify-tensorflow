@@ -13,5 +13,5 @@ responses
 sklearn
 scipy
 tensorflow-data-validation==0.11.0
-tensorflow-transform
+tensorflow-transform==0.9.0
 xgboost
