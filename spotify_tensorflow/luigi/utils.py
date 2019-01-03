@@ -86,7 +86,7 @@ def _fetch_file(url, output_path=None):
     return output_path
 
 
-def fetch_tfdv_whl(version, output_path=None, platform="manylinux1"):
+def fetch_tfdv_whl(version=None, output_path=None, platform="manylinux1"):
     # type: (str, str, str) -> str
     """Fetches the TFDV pip package from PyPI and saves it to a temporary file (or the provided
     output path). Returns the path to the fetched package."""
