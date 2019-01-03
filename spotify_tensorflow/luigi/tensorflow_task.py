@@ -95,11 +95,11 @@ class TensorFlowTask(luigi.Task):
         self._success_hook()
 
     def output(self):
-        if is_gcs_path(self.get_job_dir()):
-            return GCSFlagTarget(self.get_job_dir())
-        else:
-            # assume local filesystem otherwise
-            return LocalTarget(self.get_job_dir())
+        """
+        Generate Target dynamically based on `self.get_job_dir()`.
+        """
+        job_dir = str(self.get_job_dir())
+        return GCSFlagTarget(job_dir) if is_gcs_path(job_dir) else LocalTarget(job_dir)
 
     # TODO(rav): look into luigi hooks
     def _success_hook(self):
