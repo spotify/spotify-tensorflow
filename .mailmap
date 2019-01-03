@@ -1,6 +1,17 @@
-Anna Smith <annasmith@spotify.com> <annaks@users.noreply.github.com>
-Fallon Chen <fallon@spotify.com> <fallonchen@users.noreply.github.com>
-Rafal Wojdyla <rav@spotify.com> <ravwojdyla@users.noreply.github.com>
-Romain Yon <romain@spotify.com> <yonromai@users.noreply.github.com>
-Richard Whitcomb <richwhitjr@gmail.com> <rwhitcomb@spotify.com> <richwhitjr@users.noreply.github.com>
+# We use this to keep a clean git history for individual contributors
+# with multiple aliases. The first email is the currently canonical
+# email for that user.
+#
+# Check it out with:
+#     $ git shortlog -s -e -n
+
 Andrew Martin <amartin@spotify.com> <andrewsmartin.mg@gmail.com>
+Anna Smith <annasmith@spotify.com> <annaks@users.noreply.github.com>
+Brian Martin <brianm@spotify.com> <brianmartin@gmail.com>
+Fallon Chen <fallon@spotify.com> <fallonchen@users.noreply.github.com>
+François Le Lay <fly@spotify.com> <mfworx@gmail.com>
+Keshi Dai <keshi@spotify.com> <daikeshi@users.noreply.github.com>
+Martin Bomio <martinbomio@spotify.com> <martinbomio@gmail.com>
+Rafal Wojdyla <rav@spotify.com> <ravwojdyla@users.noreply.github.com>
+Richard Whitcomb <richwhitjr@gmail.com> <rwhitcomb@spotify.com> <richwhitjr@users.noreply.github.com>
+Romain Yon <romain@spotify.com> <yonromai@users.noreply.github.com>
