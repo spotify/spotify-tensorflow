@@ -18,7 +18,7 @@
 import json
 
 import tensorflow as tf
-from google.protobuf import text_format
+from google.protobuf import text_format  # type: ignore
 from spotify_tensorflow.example_decoders import ExampleDecoder, ExampleWithFeatureSpecDecoder
 
 

@@ -4,9 +4,12 @@
 dist/
 build/
 .idea/
+*.iml
 *.pyc
 .tox/
 py27/
+venv/
+venv2/
 target/
 *coverage*
 *.swp
@@ -14,3 +17,4 @@ AUTHORS
 ChangeLog
 .DS_Store
 .mypy_cache
+tmp/
