@@ -79,12 +79,12 @@ class PythonDataflowTask(MixinNaiveBulkComplete, luigi.Task):
 
     # Optional dataflow args
     temp_location = None  # type: str
-    num_workers = None  # type: str
+    num_workers = None  # type: int
     autoscaling_algorithm = None  # type: str
-    max_num_workers = None  # type: str
+    max_num_workers = None  # type: int
     network = None  # type: str
     subnetwork = None  # type: str
-    disk_size_gb = None  # type: str
+    disk_size_gb = None  # type: int
     worker_machine_type = None  # type: str
     worker_disk_type = None  # type: str
     service_account = None  # type: str

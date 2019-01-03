@@ -31,4 +31,4 @@ currently they include:
 To run the examples:
 
  * Ensure `requirements.txt` and `test-requirements.txt` are installed (probably in a virtualenv).
- * Invoke via `scripts/run_examples.sh`
+ * Invoke via `bin/run-examples`
