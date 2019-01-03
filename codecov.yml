@@ -1,0 +1,2 @@
+ignore:
+  - "**/external_daily_snapshot.py"
