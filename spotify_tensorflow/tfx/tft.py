@@ -98,6 +98,8 @@ class TFTransform:
         if args is None:
             args = sys.argv[1:]
         tft_args, pipeline_args = parser.parse_known_args(args=args)
+        # pipeline_args also requires temp_location
+        pipeline_args.append("--temp_location=%s" % tft_args.temp_location)
 
         p = cls()
         p.transform_data(pipeline_args=pipeline_args,
