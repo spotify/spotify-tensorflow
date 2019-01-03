@@ -1,69 +1,62 @@
-version: 2
+version: 2.1
+
+executors:
+  tox:
+    docker:
+      - image: themattrix/tox
+    working_directory: ~/repo
+
+commands:
+  tox:
+    parameters:
+      env:
+        type: string
+    steps:
+      - checkout
+      - run: tox -e << parameters.env >>
+
 jobs:
-  test-python3:
-    docker:
-      - image: circleci/python:3.6.7
-      
-    working_directory: ~/repo
 
+  lint:
+    executor: tox
     steps:
-      - checkout
+      - tox: {env: lint}
 
-      - restore_cache:
-          keys:
-          - v1-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "test-requirements-mypy.txt" }}
-          - v1-dependencies-
-
-      - run:
-          name: Run Tests
-          command: |
-            sudo pip install tox
-            tox -e mypy
-
-      - save_cache:
-          paths:
-            - ./.tox/py36
-          key: v1-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "test-requirements-mypy.txt" }}
-
-      - run:
-          name: Upload Coverage
-          command: |
-            pip install --user codecov
-            python -m codecov
-
-  test-python2:
-    docker:
-      - image: circleci/python:2.7.15
-
-    working_directory: ~/repo
-
+  test-tf18:
+    executor: tox
     steps:
-      - checkout
+      - tox: {env: test-tf18}
 
-      - restore_cache:
-          keys:
-          - v1-dependencies-py2-{{ checksum "requirements.txt" }}-{{ checksum "test-requirements.txt" }}
-          - v1-dependencies-py2-
+  test-tf19:
+    executor: tox
+    steps:
+      - tox: {env: test-tf19}
 
-      - run:
-          name: Run Tests
-          command: |
-            sudo pip install tox
-            tox -e py27
+  test:
+    executor: tox
+    steps:
+      - tox: {env: test}
+      - run: |
+          pip install --user codecov
+          python -m codecov
 
-      - save_cache:
-          paths:
-            - ./venv
-          key: v1-dependencies-py2-{{ checksum "requirements.txt" }}-{{ checksum "test-requirements.txt" }}
+  examples:
+    executor: tox
+    steps:
+      - tox: {env: examples}
 
-      - run:
-          name: Upload Coverage
-          command: |
-            pip install --user codecov
-            python -m codecov
+  mypy:
+    executor: tox
+    steps:
+      - tox: {env: mypy}
+
 workflows:
   version: 2
   test:
     jobs:
-      - test-python3
-      - test-python2
+      - lint
+      - test-tf18
+      - test-tf19
+      - test
+      - examples
+      - mypy
