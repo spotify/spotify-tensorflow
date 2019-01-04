@@ -59,22 +59,25 @@ class TFTransformTest(TestCase):
 
     def setUp(self):
         self.schema_file = NamedTemporaryFile(delete=False)
+        self.schema_file_name = self.schema_file.name
         self.schema_file.write(self.schema_txt)
         self.schema_file.close()
-        self.feature_spec = schema_txt_to_feature_spec(self.schema_file.name)
+        self.feature_spec = schema_txt_to_feature_spec(self.schema_file_name)
 
         self.train_data = NamedTemporaryFile(suffix=".tfrecords", delete=False)
+        self.train_data_file = self.train_data.name
         self.train_data.close()
         train_dicts = [{"test_feature": [0.1]}, {"test_feature": [-0.1]}]
-        with tf.python_io.TFRecordWriter(self.train_data.name) as writer:
+        with tf.python_io.TFRecordWriter(self.train_data_file) as writer:
             for train_dict in train_dicts:
                 tf_example = build_tf_example_from_dict(train_dict)
                 writer.write(tf_example.SerializeToString())
 
         self.eval_data = NamedTemporaryFile(suffix=".tfrecords", delete=False)
+        self.eval_data_file = self.eval_data.name
         self.eval_data.close()
         eval_dicts = [{"test_feature": [0.2]}, {"test_feature": [-0.2]}]
-        with tf.python_io.TFRecordWriter(self.eval_data.name) as writer:
+        with tf.python_io.TFRecordWriter(self.eval_data_file) as writer:
             for eval_dict in eval_dicts:
                 tf_example = build_tf_example_from_dict(eval_dict)
                 writer.write(tf_example.SerializeToString())
@@ -84,19 +87,18 @@ class TFTransformTest(TestCase):
 
     def test_transform(self):
         pipeline_args = ["--runner=DirectRunner"]
-        tft_args = ["--training_data=%s" % self.train_data.name,
-                    "--evaluation_data=%s" % self.eval_data.name,
+        tft_args = ["--training_data=%s" % self.train_data_file,
+                    "--evaluation_data=%s" % self.eval_data_file,
                     "--output_dir=%s" % self.output_dir,
                     "--temp_location=%s" % self.temp_dir,
-                    "--schema_file=%s" % self.schema_file.name]
+                    "--schema_file=%s" % self.schema_file_name]
         args = tft_args + pipeline_args
         DummyPreprocess.run(args=args)
 
         # test output structure
         sub_folders = os.listdir(self.output_dir)
-        sub_folders.sort()
-        self.assertEquals(sub_folders,
-                          ["evaluation", "training", "transform_fn", "transformed_metadata"])
+        self.assertEquals(set(sub_folders),
+                          {"evaluation", "training", "transform_fn", "transformed_metadata"})
         transformed_train_files = [f for f in os.listdir(os.path.join(self.output_dir, "training"))
                                    if f.endswith(".tfrecords")]
         self.assertEquals(len(transformed_train_files), 1)
@@ -124,10 +126,10 @@ class TFTransformTest(TestCase):
 
     def test_no_train_no_transform_fn_dir(self):
         pipeline_args = ["--runner=DirectRunner"]
-        tft_args = ["--evaluation_data=%s" % self.eval_data.name,
+        tft_args = ["--evaluation_data=%s" % self.eval_data_file,
                     "--output_dir=%s" % self.output_dir,
                     "--temp_location=%s" % self.temp_dir,
-                    "--schema_file=%s" % self.schema_file.name]
+                    "--schema_file=%s" % self.schema_file_name]
         args = tft_args + pipeline_args
         try:
             DummyPreprocess.run(args=args)
@@ -136,8 +138,8 @@ class TFTransformTest(TestCase):
             self.assertTrue(True)
 
     def tearDown(self):
-        os.remove(self.train_data.name)
-        os.remove(self.eval_data.name)
+        os.remove(self.train_data_file)
+        os.remove(self.eval_data_file)
         os.remove(self.schema_file.name)
         shutil.rmtree(self.output_dir)
         shutil.rmtree(self.temp_dir)

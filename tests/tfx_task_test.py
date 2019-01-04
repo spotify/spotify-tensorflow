@@ -46,8 +46,7 @@ class DummyUserTfxTask(TFXBaseTask):
 
 
 class TFXBaseTaskTest(TestCase):
-
-    def test_task(self):
+    def test_tfx_task(self):
         task = DummyUserTfxTask()
 
         expected = [
@@ -62,30 +61,9 @@ class TFXBaseTaskTest(TestCase):
             "--job_name=dummyusertfxtask",
             "--foo=bar"
         ]
-        expected.sort()
         actual = task._mk_cmd_line()
-        actual.sort()
-        self.assertEquals(actual, expected)
-
-
-class DummyUserTftTask(TFTransformTask):
-    project = "dummy"
-    staging_location = "staging_uri"
-    python_script = "mytft.py"
-    requirements_file = "tft_requirement.txt"
-    job_name = "dummyusertfttask-test"
-
-    def get_schema_file(self):
-        return "schema.pbtxt"
-
-    def requires(self):
-        return {"input": DummyRawFeature()}
-
-    def args(self):
-        return ["--foo=bar"]
-
-    def output(self):
-        return GCSTarget(path="output_uri")
+        self.assertEquals(actual[:2], expected[:2])
+        self.assertEquals(set(actual[2:]), set(expected[2:]))
 
 
 class NoSchemaTftTask(TFTransformTask):
@@ -105,8 +83,13 @@ class NoSchemaTftTask(TFTransformTask):
         return GCSTarget(path="output_uri")
 
 
+class DummyUserTftTask(NoSchemaTftTask):
+    def get_schema_file(self):
+        return "schema.pbtxt"
+
+
 class TFTransformTaskTest(TestCase):
-    def test_task(self):
+    def test_tft_task(self):
         task = DummyUserTftTask()
 
         expected = [
@@ -122,10 +105,9 @@ class TFTransformTaskTest(TestCase):
             "--job_name=dummyusertfttask-test",
             "--foo=bar"
         ]
-        expected.sort()
         actual = task._mk_cmd_line()
-        actual.sort()
-        self.assertEquals(actual, expected)
+        self.assertEquals(actual[:2], expected[:2])
+        self.assertEquals(set(actual[2:]), set(expected[2:]))
 
     def test_no_schema_defined_task(self):
         try:

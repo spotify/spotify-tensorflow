@@ -19,8 +19,11 @@
 from __future__ import absolute_import, division, print_function
 
 import argparse
+import getpass
 import os
 import sys
+import time
+import warnings
 from abc import abstractmethod, ABCMeta
 from typing import Dict, Union, Any, List  # noqa: F401
 
@@ -28,6 +31,7 @@ import apache_beam as beam
 import six
 from apache_beam.io import tfrecordio
 from apache_beam.io.filesystem import CompressionTypes
+from apache_beam.io.filesystems import FileSystems
 from apache_beam.runners import PipelineState  # noqa: F401
 from spotify_tensorflow.tf_schema_utils import schema_txt_to_feature_spec
 from spotify_tensorflow.tfx.utils import assert_not_empty_string, assert_not_none
@@ -67,7 +71,7 @@ class TFTransform:
     @classmethod
     def run(cls, args=None):
         if not issubclass(cls, TFTransform):
-            raise ValueError("Class {} should be inherit from TFT".format(cls))
+            raise ValueError("Class {} should be inherit from TFTransform".format(cls))
 
         parser = argparse.ArgumentParser()
         parser.add_argument(
@@ -144,15 +148,12 @@ def tftransform(pipeline_args,                          # type: List[str]
     raw_feature_spec = schema_txt_to_feature_spec(schema_file)
     raw_schema = dataset_schema.from_feature_spec(raw_feature_spec)
     raw_data_metadata = dataset_metadata.DatasetMetadata(raw_schema)
-    coder = ExampleProtoCoder(raw_data_metadata.schema)
+    raw_data_coder = ExampleProtoCoder(raw_data_metadata.schema)
 
     transformed_train_output_dir = os.path.join(output_dir, "training")
     transformed_eval_output_dir = os.path.join(output_dir, "evaluation")
-    transformed_fn_output_dir = output_dir
 
     if not any(i.startswith("--job_name") for i in pipeline_args):
-        import getpass
-        import time
         pipeline_args.append("--job_name=tf-transform-{}-{}".format(getpass.getuser(),
                                                                     int(time.time())))
 
@@ -161,14 +162,17 @@ def tftransform(pipeline_args,                          # type: List[str]
         if training_data is not None:
             # if training data is provided, transform_fn_dir will be ignored
             if transform_fn_dir is not None:
-                import warnings
                 warnings.warn("Transform_fn_dir will be ignored since training_data is provided")
+
+            transformed_fn_output = os.path.join(output_dir, "transform_fn", "saved_model.pb")
+            if FileSystems.exists(transformed_fn_output):
+                raise ValueError("Transform function already exists at %s!" % transformed_fn_output)
 
             # compute the transform_fn and apply to the training data
             raw_train_data = (
                     pipeline
-                    | "ReadTrainData" >> tfrecordio.ReadFromTFRecord(training_data)
-                    | "DecodeTrainData" >> beam.Map(coder.decode))
+                    | "ReadTrainData" >> tfrecordio.ReadFromTFRecord(training_data,
+                                                                     coder=raw_data_coder))
 
             ((transformed_train_data, transformed_train_metadata), transform_fn) = (
                     (raw_train_data, raw_data_metadata)
@@ -177,13 +181,13 @@ def tftransform(pipeline_args,                          # type: List[str]
             _ = (   # noqa: F841
                     transform_fn
                     | "WriteTransformFn" >>
-                    transform_fn_io.WriteTransformFn(transformed_fn_output_dir))
+                    transform_fn_io.WriteTransformFn(output_dir))
 
             transformed_train_coder = ExampleProtoCoder(transformed_train_metadata.schema)
             _ = (   # noqa: F841
                     transformed_train_data
-                    | "EncodeTransformedTrainData" >> beam.Map(transformed_train_coder.encode)
                     | "WriteTransformedTrainData" >> tfrecordio.WriteToTFRecord(os.path.join(transformed_train_output_dir, "part"),  # noqa: E501
+                                                                                coder=transformed_train_coder,  # noqa: E501
                                                                                 compression_type=compression_type,  # noqa: E501
                                                                                 file_name_suffix=".tfrecords"))  # noqa: E501
         else:
@@ -196,8 +200,8 @@ def tftransform(pipeline_args,                          # type: List[str]
             # if evaluation_data exists, apply the transform_fn to the evaluation data
             raw_eval_data = (
                     pipeline
-                    | "ReadEvalData" >> tfrecordio.ReadFromTFRecord(evaluation_data)
-                    | "DecodeEvalData" >> beam.Map(coder.decode))
+                    | "ReadEvalData" >> tfrecordio.ReadFromTFRecord(evaluation_data,
+                                                                    coder=raw_data_coder))
 
             (transformed_eval_data, transformed_eval_metadata) = (
                     ((raw_eval_data, raw_data_metadata), transform_fn)
@@ -206,8 +210,8 @@ def tftransform(pipeline_args,                          # type: List[str]
             transformed_eval_coder = ExampleProtoCoder(transformed_eval_metadata.schema)
             _ = (   # noqa: F841
                     transformed_eval_data
-                    | "EncodeTransformedEvalData" >> beam.Map(transformed_eval_coder.encode)
                     | "WriteTransformedEvalData" >> tfrecordio.WriteToTFRecord(os.path.join(transformed_eval_output_dir, "part"),  # noqa: E501
+                                                                               coder=transformed_eval_coder,  # noqa: E501
                                                                                compression_type=compression_type,  # noqa: E501
                                                                                file_name_suffix=".tfrecords"))  # noqa: E501
     result = pipeline.run().wait_until_finish()
