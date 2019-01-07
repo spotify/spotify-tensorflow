@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 #  Copyright 2018 Spotify AB.
@@ -72,7 +71,7 @@ def list_tf_records(paths, default_schema):
             yield f, dir_schemas[os.path.dirname(f)]
 
 
-if __name__ == "__main__":
+def main():
     cmdline_args = get_args()
 
     default_schema = None
@@ -105,3 +104,7 @@ if __name__ == "__main__":
                 if e.errno == errno.EPIPE:
                     sys.exit(0)
                 raise e
+
+
+if __name__ == "__main__":
+    main()
