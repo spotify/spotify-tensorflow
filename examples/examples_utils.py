@@ -25,3 +25,10 @@ def get_data_dir(subdir="train"):
     return path.join(
             example_dir, "..", "tests",
             "resources", "tf-test-resource", "tf-records-iris", subdir)
+
+
+def get_taxi_data_dir():
+    example_dir = path.dirname(inspect.stack()[0][1])
+    return path.join(
+        example_dir, "..", "tests",
+        "resources", "tf-test-resource", "tf-records-taxi")

@@ -34,7 +34,8 @@ from apache_beam.io.filesystem import CompressionTypes
 from apache_beam.io.filesystems import FileSystems
 from apache_beam.runners import PipelineState  # noqa: F401
 from spotify_tensorflow.tf_schema_utils import schema_txt_to_feature_spec
-from spotify_tensorflow.tfx.utils import assert_not_empty_string, assert_not_none
+from spotify_tensorflow.tfx.utils import assert_not_empty_string, assert_not_none, \
+    construct_tft_reqs_txt
 from tensorflow_transform.beam import impl as beam_impl
 from tensorflow_transform.beam.tft_beam_io import transform_fn_io
 from tensorflow_transform.coders import ExampleProtoCoder
@@ -98,13 +99,23 @@ class TFTransform:
             "--transform_fn_dir",
             required=False,
             help="path to the saved transform function")
+        parser.add_argument(
+            "--requirements_file",
+            required=False,
+            help="path to ")
 
         if args is None:
             args = sys.argv[1:]
         tft_args, pipeline_args = parser.parse_known_args(args=args)
-        # pipeline_args also requires temp_location
-        pipeline_args.append("--temp_location=%s" % tft_args.temp_location)
 
+        if tft_args.requirements_file is None:
+            reqs_file = construct_tft_reqs_txt()
+        else:
+            reqs_file = tft_args.requirements_file
+
+        # pipeline_args also needs temp_location and requirements_file
+        pipeline_args.append("--temp_location=%s" % tft_args.temp_location)
+        pipeline_args.append("--requirements_file=%s" % reqs_file)
         p = cls()
         p.transform_data(pipeline_args=pipeline_args,
                          temp_location=tft_args.temp_location,

@@ -22,11 +22,6 @@ jobs:
     steps:
       - tox: {env: "lint"}
 
-  test-tf18:
-    executor: tox
-    steps:
-      - tox: {env: "test-tf18"}
-
   test-tf19:
     executor: tox
     steps:
@@ -52,7 +47,6 @@ workflows:
   test:
     jobs:
       - lint
-      - test-tf18
       - test-tf19
       - test
       - examples
