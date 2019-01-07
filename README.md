@@ -30,5 +30,33 @@ currently they include:
 
 To run the examples:
 
- * Ensure `requirements.txt` and `test-requirements.txt` are installed (probably in a virtualenv).
- * Invoke via `bin/run-examples`
+```sh
+$ pip install -e .[examples,tensorflow]
+$ bin/run-examples
+```
+
+## Development:
+
+This project uses `tox`.
+
+```sh
+$ pip install tox
+```
+
+To see all `testenv`'s:
+
+```sh
+$ tox -l
+mypy
+lint
+examples
+test-tf18
+test-tf19
+test
+```
+
+To run the tests:
+
+```
+tox -e test
+```
