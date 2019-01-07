@@ -20,35 +20,32 @@ jobs:
   lint:
     executor: tox
     steps:
-      - tox: {env: lint}
+      - tox: {env: "lint"}
 
   test-tf18:
     executor: tox
     steps:
-      - tox: {env: test-tf18}
+      - tox: {env: "test-tf18"}
 
   test-tf19:
     executor: tox
     steps:
-      - tox: {env: test-tf19}
+      - tox: {env: "test-tf19"}
 
   test:
     executor: tox
     steps:
-      - tox: {env: test}
-      - run: |
-          pip install --user codecov
-          python -m codecov
+      - tox: {env: "test,upload-coverage"}
 
   examples:
     executor: tox
     steps:
-      - tox: {env: examples}
+      - tox: {env: "examples"}
 
   mypy:
     executor: tox
     steps:
-      - tox: {env: mypy}
+      - tox: {env: "mypy"}
 
 workflows:
   version: 2
