@@ -98,7 +98,7 @@ tensorflow-metadata==0.9.0
     @staticmethod
     def test_python_script():
         task = MyTFDV()
-        assert task.python_script.rstrip("c").endswith("pipeline/tfdv.py")
+        assert task.python_script.rstrip("c").endswith("tfx/tfdv.py")
 
     @staticmethod
     def test_requirements_file_set():

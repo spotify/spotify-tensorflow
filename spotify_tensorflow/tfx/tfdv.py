@@ -22,15 +22,19 @@ from apache_beam.options.pipeline_options import PipelineOptions
 import tensorflow_data_validation as tfdv
 
 
-def main(input_path, output_path):
-    tfdv.generate_statistics_from_tfrecord(input_path, output_path,
-                                           pipeline_options=PipelineOptions())
+class TFDV(object):
+
+    @classmethod
+    def run(cls):
+
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--input")
+        parser.add_argument("--output")
+        args, _ = parser.parse_known_args()
+
+        tfdv.generate_statistics_from_tfrecord(args.input, args.output,
+                                               pipeline_options=PipelineOptions())
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--input")
-    parser.add_argument("--output")
-    args, _ = parser.parse_known_args()
-
-    main(args.input, args.output)
+    TFDV.run()

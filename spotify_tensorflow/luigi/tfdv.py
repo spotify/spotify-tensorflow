@@ -23,7 +23,7 @@ import tempfile
 import luigi
 from spotify_tensorflow.luigi.tfx_task import TFXBaseTask
 from spotify_tensorflow.luigi.utils import fetch_tfdv_whl, get_uri
-import spotify_tensorflow.pipeline.tfdv as tfdv_pipeline
+import spotify_tensorflow.tfx.tfdv as tfdv_pipeline
 import tensorflow_data_validation as tfdv
 
 logger = logging.getLogger("luigi-interface")
