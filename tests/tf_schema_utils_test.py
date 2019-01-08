@@ -16,12 +16,17 @@
 #  specific language governing permissions and limitations
 #  under the License.
 
+from __future__ import absolute_import, division, print_function
+
+import os
+from tempfile import NamedTemporaryFile
+
 import tensorflow as tf
-from spotify_tensorflow.tf_schema_utils import SchemaToFeatureSpec, FeatureSpecToSchema
+from tensorflow.python.platform import test
+from spotify_tensorflow.tf_schema_utils import SchemaToFeatureSpec, FeatureSpecToSchema, schema_txt_to_feature_spec  # noqa: E501
 
 
-class TFSchemaUtilsTest(tf.test.TestCase):
-
+class TfSchemaUtilsTest(test.TestCase):
     def test_round_trip(self):
         feature_spec = {
             "scalar_feature_1": tf.FixedLenFeature(shape=[], dtype=tf.int64),
@@ -36,3 +41,25 @@ class TFSchemaUtilsTest(tf.test.TestCase):
         inferred_schema = FeatureSpecToSchema.apply(feature_spec)
         inferred_feature_spec = SchemaToFeatureSpec.apply(inferred_schema)
         self.assertEqual(inferred_feature_spec, feature_spec)
+
+    def test_schema_txt_to_feature_spec(self):
+        schema_txt = """
+            feature {
+                name: "test_feature"
+                value_count {
+                    min: 1
+                    max: 1
+                }
+                type: FLOAT
+                presence {
+                    min_count: 1
+                }
+            }
+        """
+
+        with NamedTemporaryFile() as f:
+            f.write(schema_txt)
+            f.flush()
+            os.fsync(f)
+            feature_spec = schema_txt_to_feature_spec(f.name)
+            self.assertEqual(feature_spec, {"test_feature": tf.VarLenFeature(dtype=tf.float32)})

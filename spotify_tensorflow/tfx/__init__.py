@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Spotify AB.
+# Copyright 2017 Spotify AB.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,20 +15,3 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-
-import inspect
-from os import path
-
-
-def get_data_dir(subdir="train"):
-    example_dir = path.dirname(inspect.stack()[0][1])
-    return path.join(
-            example_dir, "..", "tests",
-            "resources", "tf-test-resource", "tf-records-iris", subdir)
-
-
-def get_taxi_data_dir():
-    example_dir = path.dirname(inspect.stack()[0][1])
-    return path.join(
-        example_dir, "..", "tests",
-        "resources", "tf-test-resource", "tf-records-taxi")

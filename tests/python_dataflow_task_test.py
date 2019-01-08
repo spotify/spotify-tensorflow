@@ -77,8 +77,7 @@ class PythonDataflowTaskFailedOnValidation(PythonDataflowTask):
 
 
 class PythonDataflowTaskTest(TestCase):
-
-    def test_task(self):
+    def test_python_dataflow_task(self):
         task = DummyPythonDataflowTask()
 
         expected = [
@@ -105,10 +104,9 @@ class PythonDataflowTaskTest(TestCase):
             "--zone=zone",
             "--region=region"
         ]
-        expected.sort()
         actual = task._mk_cmd_line()
-        actual.sort()
-        self.assertEquals(actual, expected)
+        self.assertEquals(actual[:2], expected[:2])
+        self.assertEquals(set(actual[2:]), set(expected[2:]))
 
     def test_task_failed_on_validation(self):
         task = PythonDataflowTaskFailedOnValidation()
