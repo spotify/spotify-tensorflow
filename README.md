@@ -31,7 +31,7 @@ currently they include:
 To run the examples:
 
 ```sh
-$ pip install -e .[examples,tensorflow]
+$ pip install -e .[examples,tfx]
 $ bin/run-examples
 ```
 
