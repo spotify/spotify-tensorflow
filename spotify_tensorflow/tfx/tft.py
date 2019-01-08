@@ -24,18 +24,16 @@ import os
 import sys
 import time
 import warnings
-from abc import abstractmethod, ABCMeta
-from typing import Dict, Union, Any, List  # noqa: F401
+from typing import Any, Union, List  # noqa: F401
 
 import apache_beam as beam
-import six
 from apache_beam.io import tfrecordio
 from apache_beam.io.filesystem import CompressionTypes
 from apache_beam.io.filesystems import FileSystems
 from apache_beam.runners import PipelineState  # noqa: F401
 from spotify_tensorflow.tf_schema_utils import schema_txt_to_feature_spec
-from spotify_tensorflow.tfx.utils import assert_not_empty_string, assert_not_none, \
-    construct_tft_reqs_txt
+from spotify_tensorflow.tfx.utils import assert_not_empty_string, construct_tft_reqs_txt, \
+    assert_not_none
 from tensorflow_transform.beam import impl as beam_impl
 from tensorflow_transform.beam.tft_beam_io import transform_fn_io
 from tensorflow_transform.coders import ExampleProtoCoder
@@ -43,37 +41,11 @@ from tensorflow_transform.tf_metadata import dataset_metadata
 from tensorflow_transform.tf_metadata import dataset_schema
 
 
-@six.add_metaclass(ABCMeta)
-class TFTransform:
-    """Abstract class for TFX.TFT"""
+class TFTransform(object):
+    def __init__(self, preprocessing_fn):
+        self.preprocessing_fn = preprocessing_fn
 
-    @abstractmethod
-    def get_preprocessing_fn(self):  # type: () -> Dict[str, Any]
-        """Returns a users defined preprocessing function"""
-        pass
-
-    def transform_data(self,
-                       pipeline_args,
-                       temp_location,
-                       schema_file,
-                       output_dir,
-                       training_data,
-                       evaluation_data,
-                       transform_fn_dir):
-        tftransform(pipeline_args=pipeline_args,
-                    temp_location=temp_location,
-                    preprocessing_fn=self.get_preprocessing_fn(),
-                    schema_file=schema_file,
-                    output_dir=output_dir,
-                    training_data=training_data,
-                    evaluation_data=evaluation_data,
-                    transform_fn_dir=transform_fn_dir)
-
-    @classmethod
-    def run(cls, args=None):
-        if not issubclass(cls, TFTransform):
-            raise ValueError("Class {} should be inherit from TFTransform".format(cls))
-
+    def run(self, args=None):
         parser = argparse.ArgumentParser()
         parser.add_argument(
             "--training_data",
@@ -102,7 +74,11 @@ class TFTransform:
         parser.add_argument(
             "--requirements_file",
             required=False,
-            help="path to ")
+            help="path to the requirements file we would like installed on the Dataflow workers")
+        parser.add_argument(
+            "--compression_type",
+            required=False,
+            help="compression type for writing of tf.records")
 
         if args is None:
             args = sys.argv[1:]
@@ -116,25 +92,27 @@ class TFTransform:
         # pipeline_args also needs temp_location and requirements_file
         pipeline_args.append("--temp_location=%s" % tft_args.temp_location)
         pipeline_args.append("--requirements_file=%s" % reqs_file)
-        p = cls()
-        p.transform_data(pipeline_args=pipeline_args,
-                         temp_location=tft_args.temp_location,
-                         schema_file=tft_args.schema_file,
-                         output_dir=tft_args.output_dir,
-                         training_data=tft_args.training_data,
-                         evaluation_data=tft_args.evaluation_data,
-                         transform_fn_dir=tft_args.transform_fn_dir)
+
+        tftransform(pipeline_args=pipeline_args,
+                    temp_location=tft_args.temp_location,
+                    schema_file=tft_args.schema_file,
+                    output_dir=tft_args.output_dir,
+                    preprocessing_fn=self.preprocessing_fn,
+                    training_data=tft_args.training_data,
+                    evaluation_data=tft_args.evaluation_data,
+                    transform_fn_dir=tft_args.transform_fn_dir,
+                    compression_type=tft_args.compression_type)
 
 
 def tftransform(pipeline_args,                          # type: List[str]
                 temp_location,                          # type: str
-                preprocessing_fn,                       # type: Any
                 schema_file,                            # type: str
                 output_dir,                             # type: str
+                preprocessing_fn,                       # type: Any
                 training_data=None,                     # type: Union[None, str]
                 evaluation_data=None,                   # type: Union[None, str]
                 transform_fn_dir=None,                  # type: Union[None, str]
-                compression_type=CompressionTypes.AUTO  # type: str
+                compression_type=None                   # type: str
                 ):  # type: (...) -> PipelineState
     """
     Generic tf.transform pipeline that takes tf.{example, record} training and evaluation
@@ -142,9 +120,9 @@ def tftransform(pipeline_args,                          # type: List[str]
 
     :param pipeline_args: un-parsed Dataflow arguments
     :param temp_location: temporary location for dataflow job working dir
-    :param preprocessing_fn: tf.transform preprocessing function
     :param schema_file: path to the raw feature schema text file
     :param output_dir: output dir for transformed data and function
+    :param preprocessing_fn: tf.transform preprocessing function
     :param training_data: path to the training data
     :param evaluation_data: path to the evaluation data
     :param transform_fn_dir: dir to previously saved transformation function to apply
@@ -152,9 +130,12 @@ def tftransform(pipeline_args,                          # type: List[str]
     :return final state of the Beam pipeline
     """
     assert_not_empty_string(temp_location)
-    assert_not_none(preprocessing_fn)
     assert_not_empty_string(schema_file)
     assert_not_empty_string(output_dir)
+    assert_not_none(preprocessing_fn)
+
+    if compression_type is None:
+        compression_type = CompressionTypes.AUTO
 
     raw_feature_spec = schema_txt_to_feature_spec(schema_file)
     raw_schema = dataset_schema.from_feature_spec(raw_feature_spec)
@@ -173,11 +154,11 @@ def tftransform(pipeline_args,                          # type: List[str]
         if training_data is not None:
             # if training data is provided, transform_fn_dir will be ignored
             if transform_fn_dir is not None:
-                warnings.warn("Transform_fn_dir will be ignored since training_data is provided")
+                warnings.warn("Transform_fn_dir is ignored because training_data is provided")
 
-            transformed_fn_output = os.path.join(output_dir, "transform_fn", "saved_model.pb")
-            if FileSystems.exists(transformed_fn_output):
-                raise ValueError("Transform function already exists at %s!" % transformed_fn_output)
+            transform_fn_output = os.path.join(output_dir, "transform_fn", "saved_model.pb")
+            if FileSystems.exists(transform_fn_output):
+                raise ValueError("Transform fn already exists at %s!" % transform_fn_output)
 
             # compute the transform_fn and apply to the training data
             raw_train_data = (

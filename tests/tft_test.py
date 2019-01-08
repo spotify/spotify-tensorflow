@@ -31,15 +31,10 @@ from spotify_tensorflow.tf_schema_utils import schema_txt_to_feature_spec
 from spotify_tensorflow.tfx.tft import TFTransform
 
 
-class DummyPreprocess(TFTransform):
-    def get_preprocessing_fn(self):
-
-        def preprocessing_fn(inputs):
-            out = dict()
-            out["test_feature_fx"] = tft.scale_to_z_score(inputs["test_feature"])
-            return out
-
-        return preprocessing_fn
+def dummy_preprocessing_fn(inputs):
+    out = dict()
+    out["test_feature_fx"] = tft.scale_to_z_score(inputs["test_feature"])
+    return out
 
 
 class TFTransformTest(TestCase):
@@ -93,7 +88,7 @@ class TFTransformTest(TestCase):
                     "--temp_location=%s" % self.temp_dir,
                     "--schema_file=%s" % self.schema_file_name]
         args = tft_args + pipeline_args
-        DummyPreprocess.run(args=args)
+        TFTransform(preprocessing_fn=dummy_preprocessing_fn).run(args=args)
 
         # test output structure
         sub_folders = os.listdir(self.output_dir)
@@ -122,6 +117,8 @@ class TFTransformTest(TestCase):
                             for js in parse_tf_records(path)]
         transformed_eval.sort(key=lambda x: x[0])
         self.assertEqual(len(transformed_eval), 2)
+        # transformed_eval is derived from the z-score transformation based on the training data
+        # eval_value = (raw_value - train_mean) / train_std_dev
         self.assertEqual(transformed_eval, [[-2.0], [2.0]])
 
     def test_no_train_no_transform_fn_dir(self):
@@ -132,7 +129,7 @@ class TFTransformTest(TestCase):
                     "--schema_file=%s" % self.schema_file_name]
         args = tft_args + pipeline_args
         try:
-            DummyPreprocess.run(args=args)
+            TFTransform(preprocessing_fn=dummy_preprocessing_fn).run(args=args)
             self.assertTrue(False)
         except ValueError:
             self.assertTrue(True)

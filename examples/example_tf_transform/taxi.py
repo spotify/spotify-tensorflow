@@ -19,6 +19,7 @@ import tensorflow as tf
 
 
 def transformed_name(key):
+    """Name for the transformed feature."""
     return key + "_xf"
 
 
