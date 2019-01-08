@@ -56,11 +56,11 @@ def get_decoder_from_schema(schema):
         return ExampleWithFeatureSpecDecoder(feature_spec)
 
 
-def tfr_read_to_json(tf_records_path, schema_path=None):
+def tfr_read_to_json(tf_records_paths, schema_path=None):
     if schema_path is not None:
         assert file_io.file_exists(schema_path), "File not found: {}".format(schema_path)
 
-    for tf_record_file, schema in list_tf_records(tf_records_path, schema_path):
+    for tf_record_file, schema in list_tf_records(tf_records_paths, schema_path):
         assert file_io.file_exists(tf_record_file), "File not found: {}".format(tf_record_file)
 
         decoder = get_decoder_from_schema(schema)
@@ -80,7 +80,7 @@ def main():
     args = parser.parse_args()
 
     try:
-        for json_str in tfr_read_to_json(args.tf_records_path, args.schema):
+        for json_str in tfr_read_to_json(args.tf_records_paths, args.schema):
             print(json_str)
     except IOError as e:
         if e.errno == errno.EPIPE:
