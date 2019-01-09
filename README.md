@@ -60,3 +60,9 @@ To run the tests:
 ```
 tox -e test
 ```
+
+To release:
+
+```
+python setup.py sdist upload -r pypi
+```
