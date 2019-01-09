@@ -47,9 +47,7 @@ class TFDVGenerateStatsTask(TFXBaseTask):
     def tfx_args(self):
         args = []
         if not self.local_runner:
-            # Fetch the TFDV wheel ourselves for the Dataflow worker.
-            local_tfdv_whl_path = fetch_tfdv_whl(version=tfdv.__version__)
-            args.append("--extra_packages={}".format(local_tfdv_whl_path))
+            args.append("--setup_file=./setup.py")
         return args
 
     @property
