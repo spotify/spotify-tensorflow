@@ -25,6 +25,7 @@ import six
 import numpy as np  # noqa: F401
 import pandas as pd
 import tensorflow as tf
+from spotify_tensorflow.tf_schema_utils import parse_schema_file, schema_to_feature_spec
 from tensorflow_metadata.proto.v0.schema_pb2 import Schema  # noqa: F401
 
 
@@ -49,9 +50,8 @@ class Datasets(object):
 
         :param schema_path: tf.metadata Schema path
         """
-        from spotify_tensorflow.tf_schema_utils import SchemaToFeatureSpec
-        schema = SchemaToFeatureSpec.parse_schema_file(schema_path)
-        return SchemaToFeatureSpec.apply(schema), schema
+        schema = parse_schema_file(schema_path)
+        return schema_to_feature_spec(schema), schema
 
     @classmethod
     def parse_schema_from_stats(cls, stats_path):
@@ -63,10 +63,9 @@ class Datasets(object):
         :param stats_path: tf.metadata DatasetFeatureStatisticsList path
         """
         import tensorflow_data_validation as tfdv
-        from spotify_tensorflow.tf_schema_utils import SchemaToFeatureSpec
         stats = tfdv.load_statistics(stats_path)
         schema = tfdv.infer_schema(stats)
-        return SchemaToFeatureSpec.apply(schema), schema
+        return schema_to_feature_spec(schema), schema
 
     @classmethod
     def examples_via_schema(cls,
