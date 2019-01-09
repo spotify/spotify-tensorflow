@@ -27,7 +27,7 @@ from unittest import TestCase
 import tensorflow as tf
 import tensorflow_transform as tft
 from spotify_tensorflow.example_decoders import ExampleDecoder
-from spotify_tensorflow.tf_schema_utils import schema_txt_to_feature_spec
+from spotify_tensorflow.tf_schema_utils import schema_txt_file_to_feature_spec
 from spotify_tensorflow.tfx.tft import TFTransform
 
 
@@ -57,7 +57,7 @@ class TFTransformTest(TestCase):
         self.schema_file_name = self.schema_file.name
         self.schema_file.write(self.schema_txt)
         self.schema_file.close()
-        self.feature_spec = schema_txt_to_feature_spec(self.schema_file_name)
+        self.feature_spec = schema_txt_file_to_feature_spec(self.schema_file_name)
 
         self.train_data = NamedTemporaryFile(suffix=".tfrecords", delete=False)
         self.train_data_file = self.train_data.name

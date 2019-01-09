@@ -23,7 +23,8 @@ from tempfile import NamedTemporaryFile
 
 import tensorflow as tf
 from tensorflow.python.platform import test
-from spotify_tensorflow.tf_schema_utils import SchemaToFeatureSpec, FeatureSpecToSchema, schema_txt_to_feature_spec  # noqa: E501
+from spotify_tensorflow.tf_schema_utils import feature_spec_to_schema, \
+    schema_to_feature_spec, schema_txt_file_to_feature_spec  # noqa: E501
 
 
 class TfSchemaUtilsTest(test.TestCase):
@@ -38,8 +39,8 @@ class TfSchemaUtilsTest(test.TestCase):
             "2d_vector_feature": tf.FixedLenFeature(shape=[2, 2], dtype=tf.float32),
             "sparse_feature": tf.SparseFeature("idx", "value", tf.float32, 10),
         }
-        inferred_schema = FeatureSpecToSchema.apply(feature_spec)
-        inferred_feature_spec = SchemaToFeatureSpec.apply(inferred_schema)
+        inferred_schema = feature_spec_to_schema(feature_spec)
+        inferred_feature_spec = schema_to_feature_spec(inferred_schema)
         self.assertEqual(inferred_feature_spec, feature_spec)
 
     def test_schema_txt_to_feature_spec(self):
@@ -61,5 +62,5 @@ class TfSchemaUtilsTest(test.TestCase):
             f.write(schema_txt)
             f.flush()
             os.fsync(f)
-            feature_spec = schema_txt_to_feature_spec(f.name)
+            feature_spec = schema_txt_file_to_feature_spec(f.name)
             self.assertEqual(feature_spec, {"test_feature": tf.VarLenFeature(dtype=tf.float32)})

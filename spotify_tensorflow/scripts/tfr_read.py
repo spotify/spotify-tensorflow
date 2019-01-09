@@ -25,7 +25,7 @@ import sys
 import tensorflow as tf
 from tensorflow.python.lib.io import file_io
 from spotify_tensorflow.example_decoders import ExampleWithFeatureSpecDecoder, ExampleDecoder
-from spotify_tensorflow.tf_schema_utils import SchemaToFeatureSpec
+from spotify_tensorflow.tf_schema_utils import schema_file_to_feature_spec
 
 
 def resolve_schema(dir, default_schema=None):
@@ -51,8 +51,7 @@ def get_decoder_from_schema(schema):
     if schema is None:
         return ExampleDecoder()
     else:
-        schema_object = SchemaToFeatureSpec.parse_schema_file(schema)
-        feature_spec = SchemaToFeatureSpec.apply(schema_object)
+        feature_spec = schema_file_to_feature_spec(schema)
         return ExampleWithFeatureSpecDecoder(feature_spec)
 
 

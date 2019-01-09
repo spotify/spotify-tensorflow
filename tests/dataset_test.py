@@ -29,7 +29,7 @@ from tensorflow.python.lib.io.tf_record import TFRecordWriter
 from tensorflow.python.eager.context import eager_mode
 from spotify_tensorflow.dataset import Datasets
 from spotify_tensorflow.featran import Featran
-from spotify_tensorflow.tf_schema_utils import FeatureSpecToSchema
+from spotify_tensorflow.tf_schema_utils import feature_spec_to_schema
 
 
 class DataUtil(object):
@@ -68,9 +68,9 @@ class SparseTest(test.TestCase):
 
     @staticmethod
     def _write_test_data():
-        schema = FeatureSpecToSchema.apply({"f0": tf.VarLenFeature(dtype=tf.int64),
-                                            "f1": tf.VarLenFeature(dtype=tf.int64),
-                                            "f2": tf.VarLenFeature(dtype=tf.int64)})
+        schema = feature_spec_to_schema({"f0": tf.VarLenFeature(dtype=tf.int64),
+                                         "f1": tf.VarLenFeature(dtype=tf.int64),
+                                         "f2": tf.VarLenFeature(dtype=tf.int64)})
         batches = [
             [1, 4, None],
             [2, None, None],
@@ -116,8 +116,8 @@ class SquareTest(test.TestCase):
 
     @staticmethod
     def _write_test_data():
-        schema = FeatureSpecToSchema.apply({"f1": tf.FixedLenFeature((), tf.int64),
-                                            "f2": tf.FixedLenFeature((), tf.int64)})
+        schema = feature_spec_to_schema({"f1": tf.FixedLenFeature((), tf.int64),
+                                         "f2": tf.FixedLenFeature((), tf.int64)})
         values = [{"f1": 1, "f2": 2}]
 
         example_proto = [example_pb2.Example(features=feature_pb2.Features(feature={
