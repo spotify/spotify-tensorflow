@@ -24,18 +24,11 @@ from subprocess import CalledProcessError
 
 import luigi
 from luigi import LocalTarget
-from luigi.contrib.gcs import GCSTarget
 from spotify_tensorflow.luigi.tensorflow_task import TensorFlowTask
-
-
-class MockGCSTarget(GCSTarget):
-
-    def __init__(self, path):
-        self.path = path
+from tests.test_utils import MockGCSTarget
 
 
 class TestRequires(luigi.ExternalTask):
-
     def output(self):
         return MockGCSTarget("gs://training/data")
 
