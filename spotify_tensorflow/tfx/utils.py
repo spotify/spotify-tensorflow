@@ -15,7 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-import tempfile
 from typing import Any  # noqa: F401
 
 
@@ -31,16 +30,3 @@ def assert_not_empty_string(arg):
         raise TypeError("Argument should be a string")
     if arg == "":
         raise ValueError("Argument can't be an empty string")
-
-
-def construct_tft_reqs_txt():
-    # type: () -> str
-    tf_metadata_version = "0.9.0"
-    tf_transform_version = "0.9.0"
-
-    with tempfile.NamedTemporaryFile("w", delete=False) as tft_reqs_txt:
-        tft_reqs_txt.writelines([
-            "tensorflow-transform=={}\n".format(tf_transform_version),
-            "tensorflow-metadata=={}\n".format(tf_metadata_version)
-        ])
-        return tft_reqs_txt.name

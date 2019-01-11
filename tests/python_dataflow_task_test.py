@@ -48,6 +48,7 @@ class DummyPythonDataflowTask(PythonDataflowTask):
     disk_size_gb = 30
     worker_disk_type = "disc_type"
     job_name = "dummy"
+    setup_file = "setup.py"
 
     def requires(self):
         return {"input": DummyRawFeature()}
@@ -102,7 +103,8 @@ class PythonDataflowTaskTest(TestCase):
             "--worker_disk_type=disc_type",
             "--job_name=dummy",
             "--zone=zone",
-            "--region=region"
+            "--region=region",
+            "--setup_file=setup.py"
         ]
         actual = task._mk_cmd_line()
         self.assertEquals(actual[:2], expected[:2])
