@@ -53,6 +53,7 @@ class PythonDataflowTask(MixinNaiveBulkComplete, luigi.Task):
     requirements_file = None        # Path to a requirements file containing package dependencies.
     local_runner = False            # If local_runner = True, the job uses DirectRunner,
                                       otherwise it uses DataflowRunner
+    setup_file = None               # Path to a setup Python file containing package dependencies.
 
     :Example:
 
@@ -91,6 +92,7 @@ class PythonDataflowTask(MixinNaiveBulkComplete, luigi.Task):
     job_name = None  # type: str
     requirements_file = None  # type: str
     local_runner = False  # type: bool
+    setup_file = None  # type: str
 
     def __init__(self, *args, **kwargs):
         super(PythonDataflowTask, self).__init__(*args, **kwargs)
@@ -258,6 +260,8 @@ class PythonDataflowTask(MixinNaiveBulkComplete, luigi.Task):
             dataflow_args += ["--service_account_email={}".format(self.service_account)]
         if self.requirements_file:
             dataflow_args += ["--requirements_file={}".format(self.requirements_file)]
+        if self.setup_file:
+            dataflow_args += ["--setup_file={}".format(self.setup_file)]
 
         return dataflow_args
 
