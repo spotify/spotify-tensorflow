@@ -11,3 +11,16 @@ include requirements.txt
 prune .circleci
 prune examples
 prune test-resources
+include *.txt
+recursive-include tests *.data
+recursive-include tests *.json
+recursive-include tests *.md
+recursive-include tests *.pb
+recursive-include tests *.pbtxt
+recursive-include tests *.properties
+recursive-include tests *.py
+recursive-include tests *.sbt
+recursive-include tests *.scala
+recursive-include tests *.tfrecords
+recursive-include tests *.txt
+recursive-include tests *.xml

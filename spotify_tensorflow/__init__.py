@@ -15,3 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+# Copyright 2019 Spotify AB
+#
+__version__ = '0.5.1'
+__description__ = "Spotify-specific helpers for TensorFlow"
+__url__ = "https://github.com/spotify/spotify-tensorflow"
+__license__ = "Apache-2"
