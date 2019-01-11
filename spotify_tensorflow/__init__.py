@@ -17,7 +17,7 @@
 #
 # Copyright 2019 Spotify AB
 #
-__version__ = '0.5.1'
+__version__ = "0.5.2"
 __description__ = "Spotify-specific helpers for TensorFlow"
 __url__ = "https://github.com/spotify/spotify-tensorflow"
 __license__ = "Apache-2"
