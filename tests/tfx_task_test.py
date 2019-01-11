@@ -20,13 +20,13 @@ from __future__ import absolute_import, division, print_function
 from unittest import TestCase
 
 import luigi
-from luigi.contrib.gcs import GCSTarget
 from spotify_tensorflow.luigi.tfx_task import TFXBaseTask, TFTransformTask
+from tests.test_utils import MockGCSTarget
 
 
 class DummyRawFeature(luigi.ExternalTask):
     def output(self):
-        return GCSTarget("output_uri")
+        return MockGCSTarget("output_uri")
 
 
 class DummyUserTfxTask(TFXBaseTask):
@@ -42,7 +42,7 @@ class DummyUserTfxTask(TFXBaseTask):
         return ["--foo=bar"]
 
     def output(self):
-        return GCSTarget(path="output_uri")
+        return MockGCSTarget(path="output_uri")
 
 
 class TFXBaseTaskTest(TestCase):
@@ -80,7 +80,7 @@ class NoSchemaTftTask(TFTransformTask):
         return ["--foo=bar"]
 
     def output(self):
-        return GCSTarget(path="output_uri")
+        return MockGCSTarget(path="output_uri")
 
 
 class DummyUserTftTask(NoSchemaTftTask):
