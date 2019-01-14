@@ -17,6 +17,7 @@
 
 from __future__ import absolute_import, division, print_function
 
+from functools import wraps
 import os
 import tempfile
 from os.path import join as pjoin
@@ -49,19 +50,12 @@ class DataUtil(object):
         return data_file, schema_path
 
     @staticmethod
-    def run_in_eager(__unused__=None):
-        assert not __unused__, "Add () after run_in_eager."
-
-        def decorator(f):
-            """Test method decorator."""
-
-            def test_decorated(self, **kwargs):
-                with eager_mode():
-                    f(self, **kwargs)
-
-            return test_decorated
-
-        return decorator
+    def run_in_eager(f):
+        @wraps(f)
+        def wrapper(*args, **kwds):
+            with eager_mode():
+                return f(*args, **kwds)
+        return wrapper
 
 
 class SparseTest(test.TestCase):
@@ -85,7 +79,7 @@ class SparseTest(test.TestCase):
 
         return DataUtil.write_test_data(example_proto, schema)
 
-    @DataUtil.run_in_eager()
+    @DataUtil.run_in_eager
     def test_sparse_features(self):
         data, schema_path = SparseTest._write_test_data()
         dataset = next(Datasets.dataframe.examples_via_schema(data,
@@ -97,7 +91,7 @@ class SparseTest(test.TestCase):
         self.assertSequenceEqual([3, 5, 0], list(values[2]))
         self.assertSequenceEqual([0, 0, 0], list(values[3]))
 
-    @DataUtil.run_in_eager()
+    @DataUtil.run_in_eager
     def test_sparse_features_with_default(self):
         data, schema_path = SparseTest._write_test_data()
         d = 1
@@ -166,7 +160,7 @@ class SquareTest(test.TestCase):
         feature_spec, schema = Datasets.parse_schema_from_stats(self.stats_path)
         self.assertEqual(len(feature_spec), self.N_FEATURES)
 
-    @DataUtil.run_in_eager()
+    @DataUtil.run_in_eager
     def test_data_frame_read_dataset(self):
         data = next(
             Datasets.dataframe.examples_via_schema(self.train_data,
@@ -175,7 +169,7 @@ class SquareTest(test.TestCase):
         self.assertEqual(self.N_POINTS, len(data))
         self.assertEqual(self.N_FEATURES, len(data.columns))
 
-    @DataUtil.run_in_eager()
+    @DataUtil.run_in_eager
     def test_data_frame_read_dataset_dictionary(self):
         data = next(
             Datasets.dict.examples_via_schema(self.train_data,
@@ -184,7 +178,7 @@ class SquareTest(test.TestCase):
         self.assertEqual(self.N_FEATURES, len(data.keys()))
         self.assertEqual(self.N_POINTS, len(data["f1"]))
 
-    @DataUtil.run_in_eager()
+    @DataUtil.run_in_eager
     def test_data_frame_read_dataset_ordered(self):
         dataset = Datasets.dataframe.examples_via_schema(self.train_data,
                                                          batch_size=1024,
@@ -195,7 +189,7 @@ class SquareTest(test.TestCase):
         self.assertEqual(self.N_FEATURES, len(data.columns))
         self.assertEqual(self.ordered_feature_names, data.columns.values.tolist())
 
-    @DataUtil.run_in_eager()
+    @DataUtil.run_in_eager
     def test_data_frame_read_dataset_dictionary_settings(self):
         dataset = Datasets.dict.examples_via_schema(self.train_data,
                                                     batch_size=1024,
@@ -206,7 +200,7 @@ class SquareTest(test.TestCase):
         self.assertEqual(self.N_POINTS, len(data["f1"]))
         self.assertEqual(self.ordered_feature_names, list(data.keys()))
 
-    @DataUtil.run_in_eager()
+    @DataUtil.run_in_eager
     def test_data_frame_batch_iterator(self):
         batch_size = 10
         it = Datasets.dataframe.examples_via_schema(self.train_data,

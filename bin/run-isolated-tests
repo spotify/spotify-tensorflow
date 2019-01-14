@@ -1,0 +1,17 @@
+#!/bin/bash -eux
+
+# TODO(brianm): improve this script
+# - Add "trap" for removing intermediate files
+# - Simplify regex? Add example input and output.
+# - Run all tests then report failures, rather than
+#   exiting on the first failure.
+
+rm -f tests.txt
+nosetests -v -c xxx --collect-only 2> tests.txt
+
+< tests.txt \
+      sed -n '/^test_/p' \
+    | sed -e 's/\(test_[^ ]*\) (\([_a-z0-9\.]*\)\.\([^ ]*\)) \.\.\. ok/\2:\3.\1/' \
+    | xargs -t -n1 nosetests -vv -c xxx
+
+rm -f tests.txt
