@@ -27,6 +27,16 @@ jobs:
     steps:
       - tox: {env: "test-tf19"}
 
+  test-tf110:
+    executor: tox
+    steps:
+      # Note: We'd prefer to `upload-coverage` alongside the
+      # more usual `test` testenv, but because of the isolated
+      # test workaround (see `tox.ini`) we're not able to compute
+      # coverage for tensorflow versions 1.11.x and 1.12.x.
+      # Once we upgrade to >=1.13.x, we can switch back.
+      - tox: {env: "test-tf110,upload-coverage"}
+
   test-tf111:
     executor: tox
     steps:
@@ -40,7 +50,7 @@ jobs:
   test:
     executor: tox
     steps:
-      - tox: {env: "test,upload-coverage"}
+      - tox: {env: "test"}
 
   examples:
     executor: tox
@@ -58,6 +68,7 @@ workflows:
     jobs:
       - lint
       - test-tf19
+      - test-tf110
       - test-tf111
       - test-tf112
       - test
