@@ -39,8 +39,8 @@ class TFDVGenerateStatsTask(TFXBaseTask):
 
     python_script = tfdv_pipeline.__file__
 
-    def __init__(self):
-        super(TFDVGenerateStatsTask, self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(TFDVGenerateStatsTask, self).__init__(*args, **kwargs)
         if not self.local_runner:
             self.requirements_file = TFDVGenerateStatsTask._construct_reqs_txt()
 
