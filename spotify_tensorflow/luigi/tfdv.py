@@ -160,7 +160,7 @@ class TFDVGenerateStatsTask(TFXBaseTask):
             tfdv_version = tensorflow_data_validation.__version__
         except ImportError:
             pass
-        tf_transform_version = tfdv_version if tfdv_version is not None else "0.11.0"
+        tf_transform_version = tfdv_version if tfdv_version is not None else "0.9.0"
 
         with tempfile.NamedTemporaryFile("w", delete=False) as tfdv_reqs_txt:
             tfdv_reqs_txt.writelines([
