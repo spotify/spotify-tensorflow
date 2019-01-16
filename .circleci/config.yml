@@ -52,6 +52,11 @@ jobs:
     steps:
       - tox: {env: "mypy"}
 
+  license:
+    executor: tox
+    steps:
+      - tox: {env: "license"}
+
 workflows:
   version: 2
   test:
@@ -63,3 +68,4 @@ workflows:
       - test
       - examples
       - mypy
+      - license
