@@ -84,6 +84,9 @@ class TFDVGenerateStatsTask(TFXBaseTask):
         stats_path = "{}{}{}{}".format(base_uri.rstrip("/"), sep, file_pattern_dir,
                                        self.stats_file_name)
 
+        # Used in self._publish_outputs
+        self._output_uris = {"output": stats_path}
+
         return ["--output={}".format(stats_path)]
 
     @staticmethod
