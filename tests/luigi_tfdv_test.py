@@ -19,7 +19,6 @@ from __future__ import absolute_import, division, print_function
 
 import luigi
 from luigi.local_target import LocalTarget
-from mock import patch
 from spotify_tensorflow.luigi.tfdv import TFDVGenerateStatsTask
 from tensorflow.python.platform import test
 
@@ -29,56 +28,21 @@ class ExternalData(luigi.ExternalTask):
         return LocalTarget("some/file/somewhere")
 
 
-class ExternalDataWindows(luigi.ExternalTask):
+class BaseTFDVTestTask(TFDVGenerateStatsTask):
     def output(self):
-        return LocalTarget("c:\\\\some\\file\\somewhere")
+        return LocalTarget("test")
 
 
-class MyLocalTFDV(TFDVGenerateStatsTask):
+class MyLocalTFDV(BaseTFDVTestTask):
     local_runner = True
 
     def requires(self):
         return ExternalData()
 
 
-class MyTFDV(TFDVGenerateStatsTask):
+class MyTFDV(BaseTFDVTestTask):
     def requires(self):
         return ExternalData()
-
-
-class MyTFDVWithCustomFilePatternShallow(TFDVGenerateStatsTask):
-    def requires(self):
-        return ExternalData()
-
-    def file_pattern(self):
-        return {"input": "custom-part-*"}
-
-
-class MyTFDVWithCustomFilePatternDeep(TFDVGenerateStatsTask):
-    def requires(self):
-        return ExternalData()
-
-    def file_pattern(self):
-        return {"input": "somewhere/deep/part-*"}
-
-
-class MyTFDVWithCustomFilePatternDeepWindows(TFDVGenerateStatsTask):
-    def requires(self):
-        return ExternalDataWindows()
-
-    def file_pattern(self):
-        return {"input": "somewhere\\deep\\part-*"}
-
-
-class MyTFDVWithCustomFilePatternWrong(TFDVGenerateStatsTask):
-    def requires(self):
-        return ExternalData()
-
-    def file_pattern(self):
-        return {
-            "input1": "part-*",
-            "input2": "part-*"
-        }
 
 
 class LuigiTFDVTest(test.TestCase):
@@ -86,6 +50,7 @@ class LuigiTFDVTest(test.TestCase):
     @staticmethod
     def test_construct_reqs_txt():
         reqs_txt_path = TFDVGenerateStatsTask._construct_reqs_txt()
+        print(open(reqs_txt_path, "r").read())
         assert open(reqs_txt_path, "r").read() == """tensorflow-transform==0.9.0
 tensorflow-metadata==0.9.0
 """
@@ -119,37 +84,5 @@ tensorflow-metadata==0.9.0
         task = MyTFDV()
         output_args = task._get_output_args()
         assert len(output_args) == 1
-        assert output_args[0].endswith("some/file/somewhere/_stats.pb")
-
-    @staticmethod
-    def test_get_output_args_with_custom_shallow_file_pattern():
-        task = MyTFDVWithCustomFilePatternShallow()
-        output_args = task._get_output_args()
-        assert len(output_args) == 1
-        assert output_args[0].endswith("some/file/somewhere/_stats.pb")
-
-    @staticmethod
-    def test_get_output_args_with_custom_deep_file_pattern():
-        task = MyTFDVWithCustomFilePatternDeep()
-        output_args = task._get_output_args()
-        assert len(output_args) == 1
-        assert output_args[0].endswith("some/file/somewhere/somewhere/deep/_stats.pb")
-
-    @staticmethod
-    @patch("os.sep", "\\")
-    def test_get_output_args_with_custom_deep_windows_file_pattern():
-        task = MyTFDVWithCustomFilePatternDeepWindows()
-        output_args = task._get_output_args()
-        assert len(output_args) == 1
-        assert output_args[0].endswith(
-            "c:\\\\some\\file\\somewhere\\somewhere\\deep\\_stats.pb")
-
-    @staticmethod
-    def test_get_output_args_with_custom_wrong_file_pattern():
-        task = MyTFDVWithCustomFilePatternWrong()
-        try:
-            task._get_output_args()
-        except Exception as e:
-            assert e.message.startswith("Only either 0 or 1")
-            return
-        assert False, "shouldn't get here"
+        print(output_args[0])
+        assert output_args[0].endswith("test/_stats.pb")
