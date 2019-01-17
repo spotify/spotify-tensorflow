@@ -86,7 +86,7 @@ class LuigiTFDVTest(test.TestCase):
     @staticmethod
     def test_construct_reqs_txt():
         reqs_txt_path = TFDVGenerateStatsTask._construct_reqs_txt()
-        assert open(reqs_txt_path, "r").read() == """tensorflow-transform==0.11.0
+        assert open(reqs_txt_path, "r").read() == """tensorflow-transform==0.9.0
 tensorflow-metadata==0.9.0
 """
 
