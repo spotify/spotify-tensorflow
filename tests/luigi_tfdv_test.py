@@ -50,7 +50,6 @@ class LuigiTFDVTest(test.TestCase):
     @staticmethod
     def test_construct_reqs_txt():
         reqs_txt_path = TFDVGenerateStatsTask._construct_reqs_txt()
-        print(open(reqs_txt_path, "r").read())
         assert open(reqs_txt_path, "r").read() == """tensorflow-transform==0.9.0
 tensorflow-metadata==0.9.0
 """
@@ -84,5 +83,4 @@ tensorflow-metadata==0.9.0
         task = MyTFDV()
         output_args = task._get_output_args()
         assert len(output_args) == 1
-        print(output_args[0])
         assert output_args[0].endswith("test/_stats.pb")
