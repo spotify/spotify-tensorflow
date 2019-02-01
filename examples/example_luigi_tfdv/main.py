@@ -41,7 +41,6 @@ class TaxiStats(TFDVGenerateStatsTask):
     runner = "DataflowRunner"
     project = "sp-ml-infra"
     temp_location = "gs://sp-ml-infra-public/tmp"
-    job_name = "taxi-stats-{}".format(str(time.time())[:-3])
     local_runner = True
 
     def requires(self):
