@@ -54,16 +54,17 @@ class TFXBaseTaskTest(TestCase):
             "mytfx.py",
             "--runner=DataflowRunner",
             "--project=dummy",
+            "--staging_location=staging_uri",
+            "--job_name=dummyusertfxtask",
+            "--requirements_file=tfx_requirement.txt",
             "--input=output_uri/part-*",
             "--output=output_uri",
-            "--staging_location=staging_uri",
-            "--requirements_file=tfx_requirement.txt",
-            "--job_name=dummyusertfxtask",
             "--foo=bar"
         ]
         actual = task._mk_cmd_line()
-        self.assertEquals(actual[:2], expected[:2])
-        self.assertEquals(set(actual[2:]), set(expected[2:]))
+        self.assertEquals(actual[:5], expected[:5])
+        self.assertTrue(actual[5].startswith(expected[5]))
+        self.assertEquals(actual[6:], expected[6:])
 
 
 class NoSchemaTftTask(TFTransformTask):
@@ -97,17 +98,16 @@ class TFTransformTaskTest(TestCase):
             "mytft.py",
             "--runner=DataflowRunner",
             "--project=dummy",
+            "--staging_location=staging_uri",
+            "--job_name=dummyusertfttask-test",
+            "--requirements_file=tft_requirement.txt",
             "--input=output_uri/part-*",
             "--output=output_uri",
-            "--staging_location=staging_uri",
-            "--requirements_file=tft_requirement.txt",
-            "--schema_file=schema.pbtxt",
-            "--job_name=dummyusertfttask-test",
-            "--foo=bar"
+            "--foo=bar",
+            "--schema_file=schema.pbtxt"
         ]
         actual = task._mk_cmd_line()
-        self.assertEquals(actual[:2], expected[:2])
-        self.assertEquals(set(actual[2:]), set(expected[2:]))
+        self.assertEquals(actual, expected)
 
     def test_no_schema_defined_task(self):
         try:
