@@ -17,6 +17,7 @@
 #
 
 from abc import abstractmethod
+import time
 
 from spotify_tensorflow.luigi.python_dataflow_task import PythonDataflowTask
 
@@ -26,7 +27,9 @@ class TFXBaseTask(PythonDataflowTask):
         super(TFXBaseTask, self).__init__(*args, **kwargs)
         if self.job_name is None:
             # job_name must consist of only the characters [-a-z0-9]
-            self.job_name = self.__class__.__name__.replace("_", "-").lower()
+            cls_name = self.__class__.__name__.replace("_", "-").lower()
+            self.job_name = "{cls_name}-{timestamp}".format(cls_name=cls_name,
+                                                            timestamp=str(time.time())[:-3])
 
     def tfx_args(self):
         """ Extra arguments that will be passed to your tfx dataflow job.
