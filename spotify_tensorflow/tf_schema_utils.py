@@ -38,6 +38,14 @@ def parse_schema_file(schema_path):  # type: (str) -> Schema
     """
     Read a schema file and return the proto object.
     """
+    return parse_schema_txt_file(schema_path) if schema_path.endswith("txt") \
+        else parse_schema_pb_file(schema_path)
+
+
+def parse_schema_pb_file(schema_path):  # type (str) -> Schema
+    """
+    Parse a binary tf.metadata Schema file into its in-memory representation.
+    """
     assert file_io.file_exists(schema_path), "File not found: {}".format(schema_path)
     schema = Schema()
     with file_io.FileIO(schema_path, "rb") as f:
@@ -67,16 +75,8 @@ def schema_to_feature_spec(schema):
 def schema_file_to_feature_spec(schema_path):
     # type: (str) -> Dict[str, Union[tf.FixedLenFeature, tf.VarLenFeature, tf.SparseFeature]]
     """
-    Convert a serialized tf.metadata Schema file to a Tensorflow feature_spec object
+    Convert a serialized tf.metadata Schema file (binary or text) to a Tensorflow feature_spec
+    object
     """
     schema = parse_schema_file(schema_path)
-    return schema_to_feature_spec(schema)
-
-
-def schema_txt_file_to_feature_spec(schema_path):
-    # type: (str) -> Dict[str, Union[tf.FixedLenFeature, tf.VarLenFeature, tf.SparseFeature]]
-    """
-    Convert a tf.metadata Schema text file to a TensorFlow feature_spec object.
-    """
-    schema = parse_schema_txt_file(schema_path)
     return schema_to_feature_spec(schema)

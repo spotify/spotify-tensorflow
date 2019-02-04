@@ -31,7 +31,7 @@ from apache_beam.io import tfrecordio
 from apache_beam.io.filesystem import CompressionTypes
 from apache_beam.io.filesystems import FileSystems
 from apache_beam.runners import PipelineState  # noqa: F401
-from spotify_tensorflow.tf_schema_utils import schema_txt_file_to_feature_spec
+from spotify_tensorflow.tf_schema_utils import schema_file_to_feature_spec
 from spotify_tensorflow.tfx.utils import assert_not_empty_string, assert_not_none
 from tensorflow_transform.beam import impl as beam_impl
 from tensorflow_transform.beam.tft_beam_io import transform_fn_io
@@ -109,7 +109,7 @@ def tftransform(pipeline_args,                          # type: List[str]
 
     :param pipeline_args: un-parsed Dataflow arguments
     :param temp_location: temporary location for dataflow job working dir
-    :param schema_file: path to the raw feature schema text file
+    :param schema_file: path to the raw feature schema file (text or binary)
     :param output_dir: output dir for transformed data and function
     :param preprocessing_fn: tf.transform preprocessing function
     :param training_data: path to the training data
@@ -126,7 +126,7 @@ def tftransform(pipeline_args,                          # type: List[str]
     if compression_type is None:
         compression_type = CompressionTypes.AUTO
 
-    raw_feature_spec = schema_txt_file_to_feature_spec(schema_file)
+    raw_feature_spec = schema_file_to_feature_spec(schema_file)
     raw_schema = dataset_schema.from_feature_spec(raw_feature_spec)
     raw_data_metadata = dataset_metadata.DatasetMetadata(raw_schema)
     raw_data_coder = ExampleProtoCoder(raw_data_metadata.schema)
