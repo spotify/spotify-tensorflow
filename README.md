@@ -64,5 +64,13 @@ tox -e test
 To release:
 
 ```
+git commit --allow-empty -m "Release x.y.z"
+git tag x.y.z
+git push --tags  origin master
+```
+
+Then upload to pypi:
+
+```
 python setup.py sdist upload -r pypi
 ```
