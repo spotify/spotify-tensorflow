@@ -28,7 +28,7 @@ class TFDVTest(TestCase):
     def setUp(self):
         taxi_data = get_taxi_data_dir()
         self.input_data_dir = taxi_data
-        self.stats_file = os.path.join(taxi_data, "_stats.pb")
+        self.stats_file = os.path.join(taxi_data, "stats.pb")
         tmp_dir = tempfile.mkdtemp()
         self.pipeline_args = [
             "--temp_location=%s" % tmp_dir,

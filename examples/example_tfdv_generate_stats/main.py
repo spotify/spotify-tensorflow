@@ -33,4 +33,4 @@ if __name__ == "__main__":
     ]
 
     GenerateStats(taxi_data).run(pipeline_args)
-    os.remove(os.path.join(taxi_data, "_stats.pb"))
+    os.remove(os.path.join(taxi_data, "stats.pb"))

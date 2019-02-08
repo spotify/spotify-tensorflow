@@ -30,7 +30,7 @@ class GenerateStats(object):
     def __init__(self, input_data, output_path=None):
         self.input_data = input_data
         if output_path is None:
-            self.output_path = os.path.join(self.input_data, "_stats.pb")
+            self.output_path = os.path.join(self.input_data, "stats.pb")
         else:
             self.output_path = output_path
 
