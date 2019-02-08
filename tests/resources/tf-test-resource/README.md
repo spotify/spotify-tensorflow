@@ -8,5 +8,5 @@ import tensorflow_data_validation as tfdv
 for x in ('tf-records', 'tf-records-iris'):
   for y in ('eval', 'train'):
     dir = join('./', x, y)
-    tfdv.generate_statistics_from_tfrecord(data_location=join(dir, '*.tfrecords'), output_path=join(dir, '_stats.pb'))
+    tfdv.generate_statistics_from_tfrecord(data_location=join(dir, '*.tfrecords'), output_path=join(dir, 'stats.pb'))
 ```

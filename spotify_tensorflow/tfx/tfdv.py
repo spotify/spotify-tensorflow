@@ -16,25 +16,62 @@
 # under the License.
 #
 
-import argparse
+import os
+import sys
+import time
 
-from apache_beam.options.pipeline_options import PipelineOptions
 import tensorflow_data_validation as tfdv
+from apache_beam.options.pipeline_options import GoogleCloudOptions, PipelineOptions, SetupOptions
+from spotify_tensorflow.tfx.utils import create_setup_file, assert_not_empty_string
+from tensorflow_metadata.proto.v0 import statistics_pb2  # noqa: F401
 
 
-class TFDV(object):
+class GenerateStats(object):
+    def __init__(self, input_data, output_path=None):
+        self.input_data = input_data
+        if output_path is None:
+            self.output_path = os.path.join(self.input_data, "stats.pb")
+        else:
+            self.output_path = output_path
 
-    @classmethod
-    def run(cls):
-
-        parser = argparse.ArgumentParser()
-        parser.add_argument("--input")
-        parser.add_argument("--output")
-        args, _ = parser.parse_known_args()
-
-        tfdv.generate_statistics_from_tfrecord(args.input, args.output,
-                                               pipeline_options=PipelineOptions())
+    def run(self, pipeline_args=None):
+        if pipeline_args is None:
+            pipeline_args = sys.argv[1:]
+        return generate_statistics_from_tfrecord(pipeline_args=pipeline_args,
+                                                 input_data_dir=self.input_data,
+                                                 output_path=self.output_path)
 
 
-if __name__ == "__main__":
-    TFDV.run()
+def generate_statistics_from_tfrecord(pipeline_args,   # type: str
+                                      input_data_dir,  # type: str
+                                      output_path      # type: str
+                                      ):
+    # type: (...) ->  statistics_pb2.DatasetFeatureStatisticsList
+    """
+    Generate stats file from a tfrecord dataset using TFDV
+
+    :param pipeline_args: un-parsed Dataflow arguments
+    :param input_data_dir:
+    :param output_path:
+    :return final state of the Beam pipeline
+    """
+    assert_not_empty_string(input_data_dir)
+    assert_not_empty_string(output_path)
+
+    pipeline_options = PipelineOptions(flags=pipeline_args)
+
+    all_options = pipeline_options.get_all_options()
+
+    if all_options["job_name"] is None:
+        gcloud_options = pipeline_options.view_as(GoogleCloudOptions)
+        gcloud_options.job_name = "generatestats-%s" % str(time.time())[:-3]
+
+    if all_options["setup_file"] is None:
+        setup_file_path = create_setup_file()
+        setup_options = pipeline_options.view_as(SetupOptions)
+        setup_options.setup_file = setup_file_path
+
+    input_files = os.path.join(input_data_dir, "*.tfrecords")
+    return tfdv.generate_statistics_from_tfrecord(data_location=input_files,
+                                                  output_path=output_path,
+                                                  pipeline_options=pipeline_options)

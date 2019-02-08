@@ -138,7 +138,7 @@ class SquareTest(test.TestCase):
     train_data = os.path.join(data_dir, "train", "part-*")
     eval_data = os.path.join(data_dir, "eval", "part-*")
     schema_path = os.path.join(data_dir, "train", "_inferred_schema.pb")
-    stats_path = os.path.join(data_dir, "train", "_stats.pb")
+    stats_path = os.path.join(data_dir, "train", "stats.pb")
     settings_path = os.path.join(data_dir, "settings")
 
     N_FEATURES = 5

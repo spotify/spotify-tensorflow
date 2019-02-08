@@ -15,6 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+import os
+import tempfile
+import textwrap
 from typing import Any  # noqa: F401
 
 
@@ -30,3 +33,21 @@ def assert_not_empty_string(arg):
         raise TypeError("Argument should be a string")
     if arg == "":
         raise ValueError("Argument can't be an empty string")
+
+
+def create_setup_file():
+    contents_for_setup_file = """
+    import setuptools
+    
+    if __name__ == "__main__":
+        setuptools.setup(
+            name="spotify_tensorflow_dataflow",
+            packages=setuptools.find_packages(),
+            install_requires=[
+                "spotify-tensorflow[tfdv]"
+        ])
+    """  # noqa: W293
+    setup_file_path = os.path.join(tempfile.mkdtemp(), "setup.py")
+    with open(setup_file_path, "w") as f:
+        f.writelines(textwrap.dedent(contents_for_setup_file))
+    return setup_file_path
