@@ -18,19 +18,29 @@
 
 import os
 import tempfile
+from os.path import join as pjoin
 
 from examples.examples_utils import get_taxi_data_dir
-from spotify_tensorflow.tfx.tfdv import GenerateStats
+from spotify_tensorflow.tfx.tfdv import TfDataValidator
 
 if __name__ == "__main__":
 
     taxi_data = get_taxi_data_dir()
     tmp_dir = tempfile.mkdtemp()
+    schema = pjoin(taxi_data, "chicago_taxi_schema.pbtxt")
+    schema_snapshot_path = pjoin(taxi_data, "schema_snapshot.pb")
+    stats_file = pjoin(taxi_data, "stats.pb")
+    anomalies_path = pjoin(taxi_data, "anomalies.pb")
+
     pipeline_args = [
         "--temp_location=%s" % tmp_dir,
         "--staging_location=%s" % tmp_dir,
         "--runner=DirectRunner"
     ]
 
-    GenerateStats(taxi_data).run(pipeline_args)
-    os.remove(os.path.join(taxi_data, "stats.pb"))
+    validator = TfDataValidator(schema, taxi_data)
+    validator.write_stats_and_schema(pipeline_args)
+    validator.validate_stats_against_schema()
+    os.remove(stats_file)
+    os.remove(schema_snapshot_path)
+    os.remove(anomalies_path)
