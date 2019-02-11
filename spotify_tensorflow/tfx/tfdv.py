@@ -24,7 +24,8 @@ from typing import List  # noqa: F401
 
 import tensorflow_data_validation as tfdv
 from apache_beam.options.pipeline_options import GoogleCloudOptions, PipelineOptions, SetupOptions
-from spotify_tensorflow.tfx.utils import create_setup_file, assert_not_empty_string
+from spotify_tensorflow.tfx.utils import create_setup_file, assert_not_empty_string, \
+    clean_up_pipeline_args
 from spotify_tensorflow.tf_schema_utils import parse_schema_txt_file
 from tensorflow_metadata.proto.v0 import statistics_pb2  # noqa: F401
 from tensorflow.python.lib.io import file_io
@@ -102,8 +103,8 @@ def generate_statistics_from_tfrecord(pipeline_args,  # type: List[str]
     assert_not_empty_string(data_location)
     assert_not_empty_string(output_path)
 
-    # TODO: convert pipeline_args to snake case here
-    pipeline_options = PipelineOptions(flags=pipeline_args)
+    args_in_snake_case = clean_up_pipeline_args(pipeline_args)
+    pipeline_options = PipelineOptions(flags=args_in_snake_case)
 
     all_options = pipeline_options.get_all_options()
 
