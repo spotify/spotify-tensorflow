@@ -20,6 +20,8 @@ import tempfile
 import textwrap
 from typing import Any  # noqa: F401
 
+from spotify_tensorflow.luigi.utils import to_snake_case
+
 
 def assert_not_none(arg):
     # type: (Any) -> None
@@ -51,3 +53,43 @@ def create_setup_file():
     with open(setup_file_path, "w") as f:
         f.writelines(textwrap.dedent(contents_for_setup_file))
     return setup_file_path
+
+
+def clean_up_pipeline_args(pipeline_args):
+    output_args = list()
+    for arg in pipeline_args:
+        if arg.startswith("--"):
+            if "=" in arg:
+                k, v = arg.split("=")
+                output_args.extend([to_snake_case(k), v])
+            else:
+                output_args.append(to_snake_case(arg))
+        else:
+            output_args.append(arg)
+
+    keys = output_args[0::2]
+    vals = output_args[1::2]
+    return ["%s=%s" % (key, val) for (key, val) in zip(keys, vals)
+            if key in SUPPORTED_DATAFLOW_PIPELINE_ARGS]
+
+
+SUPPORTED_DATAFLOW_PIPELINE_ARGS = {
+    "--runner",
+    "--project",
+    "--staging_location",
+    "--zone",
+    "--region",
+    "--temp_location",
+    "--num_workers",
+    "--autoscaling_algorithm",
+    "--max_num_workers",
+    "--network",
+    "--subnetwork",
+    "--disk_size_gb",
+    "--worker_machine_type",
+    "--job_name",
+    "--worker_disk_type",
+    "--service_account_email",
+    "--requirements_file"
+    "--setup_file"
+}
