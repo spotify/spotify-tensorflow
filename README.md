@@ -31,7 +31,7 @@ currently they include:
 To run the examples:
 
 ```sh
-$ pip install -e .[examples,tfdv]
+$ pip install -e .[examples]
 $ bin/run-examples
 ```
 
