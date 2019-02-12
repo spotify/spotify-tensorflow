@@ -24,7 +24,6 @@ from examples.examples_utils import get_taxi_data_dir
 from spotify_tensorflow.tfx.tfdv import TfDataValidator
 
 if __name__ == "__main__":
-
     taxi_data = get_taxi_data_dir()
     tmp_dir = tempfile.mkdtemp()
     schema = pjoin(taxi_data, "chicago_taxi_schema.pbtxt")
