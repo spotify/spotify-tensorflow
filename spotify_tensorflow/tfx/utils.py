@@ -46,7 +46,7 @@ def create_setup_file():
             name="spotify_tensorflow_dataflow",
             packages=setuptools.find_packages(),
             install_requires=[
-                "spotify-tensorflow[tfdv]"
+                "spotify-tensorflow"
         ])
     """  # noqa: W293
     setup_file_path = os.path.join(tempfile.mkdtemp(), "setup.py")
