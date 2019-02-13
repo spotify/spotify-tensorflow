@@ -22,21 +22,6 @@ jobs:
     steps:
       - tox: {env: "lint"}
 
-  test-tf19:
-    executor: tox
-    steps:
-      - tox: {env: "test-tf19"}
-
-  test-tf111:
-    executor: tox
-    steps:
-      - tox: {env: "test-tf111"}
-
-  test-tf112:
-    executor: tox
-    steps:
-      - tox: {env: "test-tf112"}
-
   test:
     executor: tox
     steps:
@@ -62,9 +47,6 @@ workflows:
   test:
     jobs:
       - lint
-      - test-tf19
-      - test-tf111
-      - test-tf112
       - test
       - examples
       - mypy
