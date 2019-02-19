@@ -15,7 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-
 import logging
 import os
 import time
@@ -26,7 +25,7 @@ import tensorflow_data_validation as tfdv
 from apache_beam.options.pipeline_options import GoogleCloudOptions, PipelineOptions, SetupOptions
 from spotify_tensorflow.tfx.utils import create_setup_file, assert_not_empty_string, \
     clean_up_pipeline_args
-from spotify_tensorflow.tf_schema_utils import parse_schema_txt_file
+from spotify_tensorflow.tf_schema_utils import parse_schema_txt_file, parse_schema_file
 from tensorflow_metadata.proto.v0 import statistics_pb2  # noqa: F401
 from tensorflow.python.lib.io import file_io
 
@@ -42,15 +41,20 @@ class TfDataValidator(object):
     """
 
     def __init__(self,
-                 schema_path,  # type: str
-                 data_location,  # type: str
+                 schema_path,           # type: str
+                 data_location,         # type: str
+                 binary_schema=False    # type: bool
                  ):
         """
-        :param schema_path: tf.metadata Schema path. Must be in text format
+        :param schema_path: tf.metadata Schema path. Must be in text or binary format
         :param data_location: input data dir containing tfrecord files
+        :param binary_schema: specifies if the schema is in a binary format
         """
         self.data_location = data_location
-        self.schema = parse_schema_txt_file(schema_path)
+        if binary_schema:
+            self.schema = parse_schema_file(schema_path)
+        else:
+            self.schema = parse_schema_txt_file(schema_path)
         self.schema_snapshot_path = pjoin(self.data_location, "schema_snapshot.pb")
         self.stats_path = pjoin(self.data_location, "stats.pb")
         self.anomalies_path = pjoin(self.data_location, "anomalies.pb")
