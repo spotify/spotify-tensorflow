@@ -136,10 +136,7 @@ class TensorFlowTask(luigi.Task):
         if self.gcp_project:
             params.append("--project=%s" % self.gcp_project)
 
-        job_name = "%s_%s_%s" % (getpass.getuser(), self.__class__.__name__,
-                                 str(uuid.uuid4()).replace("-", "_"))
-
-        params.extend(["jobs", "submit", "training", job_name])
+        params.extend(["jobs", "submit", "training", self._get_job_name()])
 
         if self.region:
             params.append("--region=%s" % self.region)
@@ -173,6 +170,11 @@ class TensorFlowTask(luigi.Task):
             args.append("--job-dir=%s" % self.get_job_dir())
         args.extend(self.tf_task_args())
         return args
+
+    def _get_job_name(self):
+        job_name = "%s_%s_%s" % (getpass.getuser(), self.__class__.__name__,
+                                 str(uuid.uuid4()).replace("-", "_"))
+        return job_name
 
     def _get_input_args(self):
         # TODO(brianm): this doesn't work when subclass yields from `requires`
