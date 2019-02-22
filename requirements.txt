@@ -4,7 +4,7 @@ oauth2client<4.0.0
 pandas>=0.22.0,<1.0.0
 six>=1.11.0,<2.0.0
 tensorflow==1.13.1; python_version=='2.7'
-tensorflow-transform==0.11.0; python_version=='2.7'
-tensorflow-data-validation==0.11.0; python_version=='2.7'
-tensorflow_metadata==0.9.0
+tensorflow-transform==0.12.0; python_version=='2.7'
+tensorflow-data-validation==0.12.0; python_version=='2.7'
+tensorflow_metadata==0.12.1
 typing>=3.6.4,<4.0.0
