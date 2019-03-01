@@ -55,7 +55,7 @@ class TfSchemaUtilsTest(test.TestCase):
                     min_count: 1
                 }
             }
-        """
+        """.encode("utf-8")
 
         with NamedTemporaryFile() as f:
             f.write(schema_txt)

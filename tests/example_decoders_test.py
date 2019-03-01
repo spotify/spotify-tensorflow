@@ -15,6 +15,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from __future__ import unicode_literals
+
 import json
 
 import tensorflow as tf
@@ -41,8 +43,8 @@ class ExampleDecodersTest(tf.test.TestCase):
                     value { float_list { value: [ 1.0, 2.0, 3.0, 4.0 ] } } }
           feature { key: "varlen_feature_2"
                     value { bytes_list { value: [ 'female' ] } } }
-          feature { key: "value" value { float_list { value: [ 12.0, 20.0 ] } } }
-          feature { key: "idx" value { int64_list { value: [ 1, 4 ] } } }
+          feature { key: "sparse_feature_value" value { float_list { value: [ 12.0, 20.0 ] } } }
+          feature { key: "sparse_feature_idx" value { int64_list { value: [ 1, 4 ] } } }
         }
         """, example)
         return example.SerializeToString()
@@ -56,7 +58,8 @@ class ExampleDecodersTest(tf.test.TestCase):
             "varlen_feature_2": tf.VarLenFeature(dtype=tf.string),
             "1d_vector_feature": tf.FixedLenFeature(shape=[1], dtype=tf.string),
             "2d_vector_feature": tf.FixedLenFeature(shape=[2, 2], dtype=tf.float32),
-            "sparse_feature": tf.SparseFeature("idx", "value", tf.float32, 10),
+            "sparse_feature": tf.SparseFeature("sparse_feature_idx", "sparse_feature_value",
+                                               tf.float32, 10),
         }
 
         dec = ExampleWithFeatureSpecDecoder(feature_spec)
@@ -69,7 +72,8 @@ class ExampleDecodersTest(tf.test.TestCase):
             "1d_vector_feature": ["this is a ,text"],
             "2d_vector_feature": [[1.0, 2.0], [3.0, 4.0]],
             "varlen_feature_2": ["female"],
-            "sparse_feature": [[1, 4], [12.0, 20.0]]
+            "sparse_feature_idx": [1, 4],
+            "sparse_feature_value": [12.0, 20.0],
         }
         self.assertEqual(actual_json, expected_decoded)
 
@@ -94,7 +98,7 @@ class ExampleDecodersTest(tf.test.TestCase):
                   ]
                 }
               },
-              "idx": {
+              "sparse_feature_idx": {
                 "int64List": {
                   "value": [
                     "1",
@@ -130,7 +134,7 @@ class ExampleDecodersTest(tf.test.TestCase):
                   ]
                 }
               },
-              "value": {
+              "sparse_feature_value": {
                 "floatList": {
                   "value": [
                     12.0,
