@@ -18,6 +18,7 @@
 import logging
 import os
 import subprocess
+import time
 
 import luigi
 from luigi.task import MixinNaiveBulkComplete
@@ -98,6 +99,11 @@ class PythonDataflowTask(MixinNaiveBulkComplete, luigi.Task):
         self._output = self.output()
         if isinstance(self._output, luigi.Target):
             self._output = {"output": self._output}
+        if self.job_name is None:
+            # job_name must consist of only the characters [-a-z0-9]
+            cls_name = self.__class__.__name__.replace("_", "-").lower()
+            self.job_name = "{cls_name}-{timestamp}".format(cls_name=cls_name,
+                                                            timestamp=str(time.time())[:-3])
 
     def on_successful_run(self):
         """ Callback that gets called right after the dataflow job has finished successfully but
