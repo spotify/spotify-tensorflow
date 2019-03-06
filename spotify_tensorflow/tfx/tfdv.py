@@ -23,6 +23,7 @@ from os.path import join as pjoin
 from typing import List  # noqa: F401
 
 import tensorflow_data_validation as tfdv
+from tensorflow_data_validation.statistics.stats_options import StatsOptions
 from apache_beam.options.pipeline_options import GoogleCloudOptions, PipelineOptions, SetupOptions
 from spotify_tensorflow.tfx.utils import create_setup_file, assert_not_empty_string, \
     clean_up_pipeline_args
@@ -42,9 +43,10 @@ class TfDataValidator(object):
     """
 
     def __init__(self,
-                 schema_path,           # type: str
-                 data_location,         # type: str
-                 binary_schema=False    # type: bool
+                 schema_path,                   # type: str
+                 data_location,                 # type: str
+                 binary_schema=False,           # type: bool
+                 stats_options=StatsOptions()   # type: StatsOptions
                  ):
         """
         :param schema_path: tf.metadata Schema path. Must be in text or binary format
@@ -59,12 +61,14 @@ class TfDataValidator(object):
         self.schema_snapshot_path = pjoin(self.data_location, "schema_snapshot.pb")
         self.stats_path = pjoin(self.data_location, "stats.pb")
         self.anomalies_path = pjoin(self.data_location, "anomalies.pb")
+        self.stats_options = stats_options
 
     def write_stats(self, pipeline_args):
         # type: (List[str]) -> statistics_pb2.DatasetFeatureStatisticsList
         return generate_statistics_from_tfrecord(pipeline_args=pipeline_args,
                                                  data_location=self.data_location,
-                                                 output_path=self.stats_path)
+                                                 output_path=self.stats_path,
+                                                 stats_options=self.stats_options)
 
     def write_stats_and_schema(self, pipeline_args):  # type: (List[str]) -> None
         self.write_stats(pipeline_args)
@@ -94,7 +98,8 @@ class TfDataValidator(object):
 
 def generate_statistics_from_tfrecord(pipeline_args,  # type: List[str]
                                       data_location,  # type: str
-                                      output_path     # type: str
+                                      output_path,    # type: str
+                                      stats_options   # type: StatsOptions
                                       ):
     # type: (...) ->  statistics_pb2.DatasetFeatureStatisticsList
     """
@@ -125,4 +130,5 @@ def generate_statistics_from_tfrecord(pipeline_args,  # type: List[str]
     input_files = os.path.join(data_location, "*.tfrecords")
     return tfdv.generate_statistics_from_tfrecord(data_location=input_files,
                                                   output_path=output_path,
+                                                  stats_options=stats_options,
                                                   pipeline_options=pipeline_options)
