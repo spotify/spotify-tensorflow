@@ -49,10 +49,12 @@ To see all `testenv`'s:
 $ tox -l
 mypy
 lint
-examples
-test-tf18
-test-tf19
-test
+examples-py27
+examples-py35
+test-py27
+test-py35
+upload-coverage
+license
 ```
 
 To run the tests:

@@ -50,7 +50,7 @@ class TFTransformTest(TestCase):
                     min_count: 1
                 }
             }
-        """
+        """.encode("utf-8")
 
     def setUp(self):
         self.schema_file = NamedTemporaryFile(delete=False)

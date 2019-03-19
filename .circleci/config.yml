@@ -22,15 +22,25 @@ jobs:
     steps:
       - tox: {env: "lint"}
 
-  test:
+  test-py27:
     executor: tox
     steps:
-      - tox: {env: "test,upload-coverage"}
+      - tox: {env: "test-py27,upload-coverage"}
 
-  examples:
+  test-py35:
     executor: tox
     steps:
-      - tox: {env: "examples"}
+      - tox: {env: "test-py35"}
+
+  examples-py27:
+    executor: tox
+    steps:
+      - tox: {env: "examples-py27"}
+
+  examples-py35:
+    executor: tox
+    steps:
+      - tox: {env: "examples-py35"}
 
   mypy:
     executor: tox
@@ -47,7 +57,9 @@ workflows:
   test:
     jobs:
       - lint
-      - test
-      - examples
+      - test-py27
+      - test-py35
+      - examples-py27
+      - examples-py35
       - mypy
       - license

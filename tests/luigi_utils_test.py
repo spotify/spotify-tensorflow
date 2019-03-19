@@ -76,7 +76,7 @@ class LuigiUtilsTest(test.TestCase):
             get_uri(NotATarget())
             assert False
         except ValueError as e:
-            assert "Unknown input target type" in e.message
+            assert "Unknown input target type" in str(e)
 
     @staticmethod
     def test_run_with_logging():
@@ -178,4 +178,4 @@ unparseable
             fetch_tfdv_whl("0.11.0")
             assert False
         except Exception as e:
-            assert "Problem fetching package. Couldn't parse listing" in e.message
+            assert "Problem fetching package. Couldn't parse listing" in str(e)
