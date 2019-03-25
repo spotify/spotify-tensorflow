@@ -20,9 +20,11 @@ import os
 import tempfile
 from os.path import join as pjoin
 from unittest import TestCase
+import mock
 
+import apache_beam as beam
 from examples.examples_utils import get_taxi_data_dir
-from spotify_tensorflow.tfx.tfdv import TfDataValidator
+from spotify_tensorflow.tfx.tfdv import TfDataValidator, generate_statistics_from_bq
 
 
 class TfDataValidatorTest(TestCase):
@@ -52,6 +54,24 @@ class TfDataValidatorTest(TestCase):
         has_no_anomalies = validator.validate_stats_against_schema()
         self.assertFalse(has_no_anomalies)
         self.assertTrue(os.path.exists(self.anomalies_path))
+
+    @mock.patch("apache_beam.io.Read", return_value=beam.Create())
+    def test_generate_statistics_from_bq(self, Read):
+        # table_rows = [
+        #     bigquery.TableRow(f=[]),
+        #     bigquery.TableRow(f=[])
+        # ]
+        #
+        # schema = bigquery.TableSchema(
+        #     fields=[
+        #         bigquery.TableFieldSchema(name='b', type='BOOLEAN', mode='REQUIRED'),
+        #         bigquery.TableFieldSchema(name='b', type='BOOLEAN', mode='REQUIRED')
+        #     ]
+        # )
+        #
+        # expected_rows = [{"a": "1", "b": [1, 2]}, {{"a": "1", "b": [3, 4]}}]
+
+        generate_statistics_from_bq(self.pipeline_args, "SELECT * FROM TABLE", self.stats_file)
 
     def tearDown(self):
         if os.path.exists(self.stats_file):

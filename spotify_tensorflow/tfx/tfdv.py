@@ -22,6 +22,8 @@ import time
 from os.path import join as pjoin
 from typing import List  # noqa: F401
 
+import apache_beam as beam
+import numpy as np
 import tensorflow_data_validation as tfdv
 from apache_beam.options.pipeline_options import GoogleCloudOptions, PipelineOptions, SetupOptions
 from spotify_tensorflow.tfx.utils import create_setup_file, assert_not_empty_string, \
@@ -108,6 +110,60 @@ def generate_statistics_from_tfrecord(pipeline_args,  # type: List[str]
     assert_not_empty_string(data_location)
     assert_not_empty_string(output_path)
 
+    pipeline_options = _parse_tfdv_pipeline_args(pipeline_args)
+    input_files = os.path.join(data_location, "*.tfrecords")
+    return tfdv.generate_statistics_from_tfrecord(data_location=input_files,
+                                                  output_path=output_path,
+                                                  pipeline_options=pipeline_options)
+
+
+def generate_statistics_from_bq(pipeline_args,  # type: List[str]
+                                query,          # type: str
+                                output_path     # type: str
+                                ):
+    # type: (...) ->  statistics_pb2.DatasetFeatureStatisticsList
+    """
+    Generate stats file for BQ output from a standard sql query using TFDV
+
+    :param pipeline_args: un-parsed Dataflow arguments
+    :param query: BQ standard SQL query to generate the dataset
+    :param output_path: output path for the stats file
+    :return a DatasetFeatureStatisticsList proto.
+    """
+    assert_not_empty_string(query)
+    assert_not_empty_string(output_path)
+
+    pipeline_options = _parse_tfdv_pipeline_args(pipeline_args)
+    with beam.Pipeline(options=pipeline_options) as pipeline:
+        def to_nparray(x):
+            out = {}
+            if x is not None:
+                for key in x:
+                    if x[key] is not None:
+                        if isinstance(x[key], list):
+                            out[key] = np.asarray(x[key])
+                        else:
+                            out[key] = np.asarray([x[key]])
+            return out
+
+        pipeline
+
+        raw_data = (
+                pipeline
+                | "ReadBigQuery" >> beam.io.Read(beam.io.BigQuerySource(query=query,
+                                                                        use_standard_sql=True))
+                | "ConvertToTFDVInput" >> beam.Map(fn=to_nparray))
+
+        stats_coder = beam.coders.ProtoCoder(statistics_pb2.DatasetFeatureStatisticsList)
+        _ = (
+                raw_data
+                | "GenerateStatistics" >> tfdv.GenerateStatistics()
+                | "WriteStatsOutput" >> beam.io.WriteToTFRecord(output_path,
+                                                                shard_name_template="",
+                                                                coder=stats_coder))
+
+
+def _parse_tfdv_pipeline_args(pipeline_args):
     args_in_snake_case = clean_up_pipeline_args(pipeline_args)
     pipeline_options = PipelineOptions(flags=args_in_snake_case)
 
@@ -122,7 +178,4 @@ def generate_statistics_from_tfrecord(pipeline_args,  # type: List[str]
         setup_options = pipeline_options.view_as(SetupOptions)
         setup_options.setup_file = setup_file_path
 
-    input_files = os.path.join(data_location, "*.tfrecords")
-    return tfdv.generate_statistics_from_tfrecord(data_location=input_files,
-                                                  output_path=output_path,
-                                                  pipeline_options=pipeline_options)
+    return pipeline_options
