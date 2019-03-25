@@ -8,3 +8,4 @@ tensorflow-transform==0.13.0
 tensorflow-data-validation==0.13.1
 tensorflow_metadata==0.13.0
 typing>=3.6.4,<4.0.0
+tfx==0.12.0
