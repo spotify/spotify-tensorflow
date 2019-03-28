@@ -25,12 +25,11 @@ from tfx.components.schema_gen.component import SchemaGen
 from tfx.components.statistics_gen.component import StatisticsGen
 from tfx.components.trainer.component import Trainer
 from tfx.components.transform.component import Transform
-from tfx.orchestration.kubeflow.runner import KubeflowRunner
 from tfx.orchestration.pipeline import PipelineDecorator
 from tfx.proto import trainer_pb2
 
 # Directory and data locations (uses Google Cloud Storage).
-from spotify_tensorflow.luigi.luigi_runner import LuigiRunner
+from spotify_tensorflow.luigi.tfx_runner import LuigiRunner
 
 _input_bucket = 'gs://my-bucket'
 _output_bucket = 'gs://my-bucket'
@@ -162,11 +161,6 @@ def _create_pipeline():
     ]
 
 
-is_prod = True
-
-
-if is_prod:
+if __name__ == "__main__":
     LuigiRunner().run(_create_pipeline())
-else:
-    KubeflowRunner().run(_create_pipeline())
 
