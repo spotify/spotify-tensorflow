@@ -29,7 +29,6 @@ from tfx.orchestration.pipeline import PipelineDecorator
 from tfx.proto import trainer_pb2
 
 # Directory and data locations (uses Google Cloud Storage).
-from spotify_tensorflow.luigi.tfx_runner import LuigiRunner
 
 _input_bucket = 'gs://my-bucket'
 _output_bucket = 'gs://my-bucket'
@@ -95,7 +94,7 @@ _query_sample_rate = 0.001  # Generate a 0.1% random sample.
             '--project=' + _project_id,
             '--temp_location=' + os.path.join(_output_bucket, 'tmp'),
             '--region=' + _gcp_region,
-            ]
+            ],
     })
 def _create_pipeline():
     """Implements the chicago taxi pipeline with TFX."""
@@ -162,5 +161,8 @@ def _create_pipeline():
 
 
 if __name__ == "__main__":
-    LuigiRunner().run(_create_pipeline())
+    # from tfx.orchestration.kubeflow.runner import KubeflowRunner
+    # KubeflowRunner().run(_create_pipeline())
 
+    from spotify_tensorflow.luigi.tfx_runner import LuigiRunner
+    LuigiRunner().run(_create_pipeline())
