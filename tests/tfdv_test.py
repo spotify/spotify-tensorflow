@@ -42,16 +42,25 @@ class TfDataValidatorTest(TestCase):
 
     def test_write_stats_and_schema(self):
         TfDataValidator(self.schema, self.data_location).write_stats_and_schema(self.pipeline_args)
-        self.assertTrue(os.path.exists(self.stats_file))
-        self.assertTrue(os.path.exists(self.schema_snapshot_path))
+        self.assertExists(self.stats_file)
+        self.assertExists(self.schema_snapshot_path)
 
     def test_validate_stats_against_schema(self):
         validator = TfDataValidator(self.schema, self.data_location)
         validator.write_stats(self.pipeline_args)
-        self.assertTrue(os.path.exists(self.stats_file))
+        self.assertExists(self.stats_file)
         has_no_anomalies = validator.validate_stats_against_schema()
         self.assertFalse(has_no_anomalies)
-        self.assertTrue(os.path.exists(self.anomalies_path))
+        self.assertExists(self.anomalies_path)
+
+    def test_infer_schema(self):
+        validator = TfDataValidator(schema_path=None, data_location=self.data_location)
+        validator.write_stats_and_schema(self.pipeline_args)
+        self.assertExists(self.stats_file)
+        self.assertExists(self.schema_snapshot_path)
+
+    def assertExists(self, path):
+        self.assertTrue(os.path.exists(path))
 
     def tearDown(self):
         if os.path.exists(self.stats_file):

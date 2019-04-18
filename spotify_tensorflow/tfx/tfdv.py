@@ -20,7 +20,7 @@ import logging
 import os
 import time
 from os.path import join as pjoin
-from typing import List  # noqa: F401
+from typing import List, Optional  # noqa: F401
 
 import tensorflow_data_validation as tfdv
 from tensorflow_data_validation.statistics.stats_options import StatsOptions
@@ -43,21 +43,24 @@ class TfDataValidator(object):
     """
 
     def __init__(self,
-                 schema_path,                   # type: str
+                 schema_path,                   # type: Optional[str]
                  data_location,                 # type: str
                  binary_schema=False,           # type: bool
                  stats_options=StatsOptions()   # type: StatsOptions
                  ):
         """
-        :param schema_path: tf.metadata Schema path. Must be in text or binary format
+        :param schema_path: tf.metadata Schema path. Must be in text or binary format. If this is
+                            None, a new schema will be inferred automatically from the statistics.
         :param data_location: input data dir containing tfrecord files
         :param binary_schema: specifies if the schema is in a binary format
         """
         self.data_location = data_location
-        if binary_schema:
-            self.schema = parse_schema_file(schema_path)
-        else:
-            self.schema = parse_schema_txt_file(schema_path)
+        self.schema = None
+        if schema_path:
+            if binary_schema:
+                self.schema = parse_schema_file(schema_path)
+            else:
+                self.schema = parse_schema_txt_file(schema_path)
         self.schema_snapshot_path = pjoin(self.data_location, "schema_snapshot.pb")
         self.stats_path = pjoin(self.data_location, "stats.pb")
         self.anomalies_path = pjoin(self.data_location, "anomalies.pb")
@@ -71,7 +74,14 @@ class TfDataValidator(object):
                                                  stats_options=self.stats_options)
 
     def write_stats_and_schema(self, pipeline_args):  # type: (List[str]) -> None
-        self.write_stats(pipeline_args)
+        stats = self.write_stats(pipeline_args)
+        if not self.schema:
+            logger.warning(
+                "Inferring a new schema for this dataset. If you want to use an existing schema, "
+                "provide a value for schema_path in the constructor."
+            )
+            new_schema = tfdv.infer_schema(stats)
+            self.schema = new_schema
         self.upload_schema()
 
     def validate_stats_against_schema(self):  # type: () -> bool
@@ -87,6 +97,11 @@ class TfDataValidator(object):
             return True
 
     def upload_schema(self):  # type: () -> None
+        if not self.schema:
+            raise Exception(
+                "Cannot upload a schema since no schema_path was provided. Either provide one, or "
+                "use write_stats_and_schema so that a schema can be inferred first."
+            )
         file_io.atomic_write_string_to_file(self.schema_snapshot_path,
                                             self.schema.SerializeToString())
 
