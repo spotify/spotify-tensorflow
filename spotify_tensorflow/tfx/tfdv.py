@@ -80,7 +80,7 @@ class TfDataValidator(object):
                 "Inferring a new schema for this dataset. If you want to use an existing schema, "
                 "provide a value for schema_path in the constructor."
             )
-            new_schema = tfdv.infer_schema(stats)
+            new_schema = tfdv.infer_schema(stats, infer_feature_shape=False)
             self.schema = new_schema
         self.upload_schema()
 
@@ -98,7 +98,7 @@ class TfDataValidator(object):
 
     def upload_schema(self):  # type: () -> None
         if not self.schema:
-            raise Exception(
+            raise ValueError(
                 "Cannot upload a schema since no schema_path was provided. Either provide one, or "
                 "use write_stats_and_schema so that a schema can be inferred first."
             )
