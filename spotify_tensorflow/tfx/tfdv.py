@@ -85,11 +85,13 @@ class TfDataValidator(object):
             self.schema = new_schema
         self.upload_schema()
 
-    def validate_stats_against_schema(self,
-                                      environment=None,          # type: str
-                                      previous_statistics=None,  # type: DatasetFeatureStatisticsList
-                                      serving_statistics=None,   # type: DatasetFeatureStatisticsList
-                                      ):  # type: () -> bool
+    def validate_stats_against_schema(
+            self,
+            environment=None,          # type: str
+            previous_statistics=None,  # type: DatasetFeatureStatisticsList
+            serving_statistics=None,   # type: DatasetFeatureStatisticsList
+    ):
+        # type: (str, DatasetFeatureStatisticsList, DatasetFeatureStatisticsList) -> bool
         stats = tfdv.load_statistics(self.stats_path)
         self.anomalies = tfdv.validate_statistics(
             stats,
