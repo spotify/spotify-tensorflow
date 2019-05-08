@@ -142,7 +142,7 @@ def generate_statistics_from_tfrecord(pipeline_args,  # type: List[str]
         setup_options = pipeline_options.view_as(SetupOptions)
         setup_options.setup_file = setup_file_path
 
-    input_files = os.path.join(data_location, "*.tfrecords")
+    input_files = os.path.join(data_location, "*.tfrecords*")
     return tfdv.generate_statistics_from_tfrecord(data_location=input_files,
                                                   output_path=output_path,
                                                   stats_options=stats_options,
