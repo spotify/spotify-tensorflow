@@ -63,6 +63,7 @@ class TfDataValidator(object):
                 self.schema = parse_schema_txt_file(schema_path)
         self.schema_snapshot_path = pjoin(self.data_location, "schema_snapshot.pb")
         self.stats_path = pjoin(self.data_location, "stats.pb")
+        self.anomalies = None
         self.anomalies_path = pjoin(self.data_location, "anomalies.pb")
         self.stats_options = stats_options
 
@@ -84,9 +85,19 @@ class TfDataValidator(object):
             self.schema = new_schema
         self.upload_schema()
 
-    def validate_stats_against_schema(self):  # type: () -> bool
+    def validate_stats_against_schema(self,
+                                      environment=None,          # type: str
+                                      previous_statistics=None,  # type: DatasetFeatureStatisticsList
+                                      serving_statistics=None,   # type: DatasetFeatureStatisticsList
+                                      ):  # type: () -> bool
         stats = tfdv.load_statistics(self.stats_path)
-        self.anomalies = tfdv.validate_statistics(stats, self.schema)
+        self.anomalies = tfdv.validate_statistics(
+            stats,
+            self.schema,
+            environment=environment,
+            previous_statistics=previous_statistics,
+            serving_statistics=serving_statistics,
+        )
         if len(self.anomalies.anomaly_info.items()) > 0:
             logger.error("Anomalies found in training dataset...")
             logger.error(str(self.anomalies.anomaly_info.items()))
