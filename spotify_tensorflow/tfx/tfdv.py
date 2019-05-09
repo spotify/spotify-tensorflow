@@ -25,6 +25,7 @@ from typing import List, Optional  # noqa: F401
 import tensorflow_data_validation as tfdv
 from tensorflow_data_validation.statistics.stats_options import StatsOptions
 from apache_beam.options.pipeline_options import GoogleCloudOptions, PipelineOptions, SetupOptions
+from tensorflow_metadata.proto.v0.statistics_pb2 import DatasetFeatureStatisticsList  # noqa: F401
 from spotify_tensorflow.tfx.utils import create_setup_file, assert_not_empty_string, \
     clean_up_pipeline_args
 from spotify_tensorflow.tf_schema_utils import parse_schema_txt_file, parse_schema_file
@@ -84,9 +85,20 @@ class TfDataValidator(object):
             self.schema = new_schema
         self.upload_schema()
 
-    def validate_stats_against_schema(self):  # type: () -> bool
+    def validate_stats_against_schema(self,
+                                      environment=None,
+                                      previous_statistics=None,
+                                      serving_statistics=None,
+                                      ):
+        # type: (str, DatasetFeatureStatisticsList, DatasetFeatureStatisticsList) -> bool
         stats = tfdv.load_statistics(self.stats_path)
-        self.anomalies = tfdv.validate_statistics(stats, self.schema)
+        self.anomalies = tfdv.validate_statistics(
+            stats,
+            self.schema,
+            environment=environment,
+            previous_statistics=previous_statistics,
+            serving_statistics=serving_statistics,
+        )
         if len(self.anomalies.anomaly_info.items()) > 0:
             logger.error("Anomalies found in training dataset...")
             logger.error(str(self.anomalies.anomaly_info.items()))
