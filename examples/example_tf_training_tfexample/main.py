@@ -49,7 +49,11 @@ def train(_):
     def split_features_label_fn(spec):
         # Canned TF's LinearClassifier requires label to be a single integer, Featran gives us
         # one hot encoding for class, thus we need to convert one hot encoding to single integer
-        labels = tf.concat([[spec.pop(l)] for l in label_keys], axis=0)
+        tf_major_ver = int(tf.__version__.split(".")[0])
+        if(tf_major_ver==0):
+            labels = tf.concat([[spec.pop(l)] for l in label_keys], concat_dim=0)
+        else:
+            labels = tf.concat([[spec.pop(l)] for l in label_keys], axis=0)
         label = tf.argmax(labels, axis=0)
         # Get the rest of the features out of the spec
         return spec, label
