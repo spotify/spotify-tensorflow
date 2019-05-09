@@ -50,7 +50,7 @@ def train(_):
         # Canned TF's LinearClassifier requires label to be a single integer, Featran gives us
         # one hot encoding for class, thus we need to convert one hot encoding to single integer
         tf_major_ver = int(tf.__version__.split(".")[0])
-        if(tf_major_ver==0):
+        if(tf_major_ver == 0):
             labels = tf.concat([[spec.pop(l)] for l in label_keys], concat_dim=0)
         else:
             labels = tf.concat([[spec.pop(l)] for l in label_keys], axis=0)
