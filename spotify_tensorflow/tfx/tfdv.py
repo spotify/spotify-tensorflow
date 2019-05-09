@@ -25,8 +25,7 @@ from typing import List, Optional  # noqa: F401
 import tensorflow_data_validation as tfdv
 from tensorflow_data_validation.statistics.stats_options import StatsOptions
 from apache_beam.options.pipeline_options import GoogleCloudOptions, PipelineOptions, SetupOptions
-from tensorflow_metadata.proto.v0.statistics_pb2 import \
-    DatasetFeatureStatisticsList  # noqa: F401
+from tensorflow_metadata.proto.v0.statistics_pb2 import DatasetFeatureStatisticsList  # noqa: F401
 from spotify_tensorflow.tfx.utils import create_setup_file, assert_not_empty_string, \
     clean_up_pipeline_args
 from spotify_tensorflow.tf_schema_utils import parse_schema_txt_file, parse_schema_file
