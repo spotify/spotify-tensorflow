@@ -5,7 +5,5 @@ pandas>=0.22.0,<1.0.0
 six>=1.11.0,<2.0.0
 scikit-learn>=0.18,<0.21
 tensorflow==1.13.1
-tensorflow-transform==0.13.0
-tensorflow-data-validation==0.13.1
-tensorflow_metadata==0.13.0
+tfx==0.13.0
 typing>=3.6.4,<4.0.0
