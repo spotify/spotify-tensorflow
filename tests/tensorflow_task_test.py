@@ -54,7 +54,7 @@ class TensorflowTaskTest(TestCase):
                          job_dir="/local/job/dir",
                          model_package_path="/path/to/package")
         expected = [
-            "gcloud", "ml-engine", "local", "train",
+            "gcloud", "ai-platform", "local", "train",
             "--package-path=/path/to/package",
             "--module-name=models.my_tf_model",
             "--",
@@ -69,13 +69,13 @@ class TensorflowTaskTest(TestCase):
         task = DummyTask(cloud=True,
                          model_package_path="/path/to/package",
                          job_dir="gs://job/dir",
-                         ml_engine_conf="/path/conf.yaml",
+                         ai_platform_conf="/path/conf.yaml",
                          blocking=True,
                          runtime_version="foo",
                          scale_tier="bar",
                          tf_debug=True)
         expected = [
-            "gcloud", "ml-engine",
+            "gcloud", "ai-platform",
             "--project=project-1",
             "jobs", "submit", "training",
             ".*_DummyTask_.*",

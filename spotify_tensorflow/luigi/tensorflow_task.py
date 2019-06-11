@@ -38,12 +38,12 @@ class TensorFlowTask(luigi.Task):
     model_name = None           The name of the python module containing your model.
                                 Ex: if the model is in /foo/models/main.py, you would set
                                 model_package = "models" and model_name = "main"
-    gcp_project = None          The Google Cloud project id to run with ml-engine
-    region = None               The GCP region if running with ml-engine, e.g. europe-west1
+    gcp_project = None          The Google Cloud project id to run with ai-platform
+    region = None               The GCP region if running with ai-platform, e.g. europe-west1
     model_name_suffix = None    A string suffix representing the model name, which will be appended
                                 to the job name.
-    runtime_version = None      The Google Cloud ML Engine runtime version for this job. Defaults to
-                                the latest stable version. See
+    runtime_version = None      The Google Cloud AI Platform runtime version for this job. Defaults
+                                to the latest stable version. See
                                 https://cloud.google.com/ml/docs/concepts/runtime-version-list for a
                                 list of accepted versions.
     scale_tier = None           Specifies the machine types, the number of replicas for workers and
@@ -62,19 +62,19 @@ class TensorFlowTask(luigi.Task):
     region = luigi.Parameter(description="GCP region", default=None)
     model_name_suffix = luigi.Parameter(description="String which will be appended to the job"
                                                     " name. Useful for finding jobs in the"
-                                                    " ml-engine UI.", default=None)
+                                                    " ai-platform UI.", default=None)
 
     # Task parameters
-    cloud = luigi.BoolParameter(description="Run on ml-engine")
+    cloud = luigi.BoolParameter(description="Run on ai-platform")
     blocking = luigi.BoolParameter(default=True, description="Run in stream-logs/blocking mode")
     job_dir = luigi.Parameter(description="A job directory, used to store snapshots, logs and any "
                                           "other artifacts. A trailing '/' is required for "
                                           "'gs://' paths.")
-    ml_engine_conf = luigi.Parameter(default=None,
-                                     description="An ml-engine YAML configuration file.")
+    ai_platform_conf = luigi.Parameter(default=None,
+                                       description="An ai-platform YAML configuration file.")
     tf_debug = luigi.BoolParameter(default=False, description="Run tf on debug mode")
     runtime_version = luigi.Parameter(default=None,
-                                      description="The Google Cloud ML Engine runtime version "
+                                      description="The Google Cloud AI Platform runtime version "
                                       "for this job.")
     scale_tier = luigi.Parameter(default=None,
                                  description="Specifies the machine types, the number of replicas "
@@ -113,7 +113,7 @@ class TensorFlowTask(luigi.Task):
             open(success_file, "a").close()
 
     def _mk_cmd(self):
-        cmd = ["gcloud", "ml-engine"]
+        cmd = ["gcloud", "ai-platform"]
         if self.cloud:
             cmd.extend(self._mk_cloud_params())
         else:
@@ -140,8 +140,8 @@ class TensorFlowTask(luigi.Task):
 
         if self.region:
             params.append("--region=%s" % self.region)
-        if self.ml_engine_conf:
-            params.append("--config=%s" % self.ml_engine_conf)
+        if self.ai_platform_conf:
+            params.append("--config=%s" % self.ai_platform_conf)
         params.append("--job-dir=%s" % self.get_job_dir())
         if self.blocking:
             params.append("--stream-logs")  # makes the execution "blocking"
