@@ -18,10 +18,10 @@
 
 from abc import abstractmethod
 
-from spotify_tensorflow.luigi.python_dataflow_task import PythonDataflowTask
+from luigi.contrib.beam_dataflow import BeamDataflowJobTask
 
 
-class TFXBaseTask(PythonDataflowTask):
+class TFXBaseTask(BeamDataflowTask):
     def __init__(self, *args, **kwargs):
         super(TFXBaseTask, self).__init__(*args, **kwargs)
 
