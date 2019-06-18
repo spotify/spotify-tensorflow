@@ -21,7 +21,7 @@ from abc import abstractmethod
 from luigi.contrib.beam_dataflow import BeamDataflowJobTask
 
 
-class TFXBaseTask(BeamDataflowTask):
+class TFXBaseTask(BeamDataflowJobTask):
     def __init__(self, *args, **kwargs):
         super(TFXBaseTask, self).__init__(*args, **kwargs)
 
