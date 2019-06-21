@@ -17,13 +17,9 @@
 
 from __future__ import absolute_import, division, print_function
 
-import os
-import tempfile
 from unittest import TestCase
-from subprocess import CalledProcessError
 
 import luigi
-from luigi import LocalTarget
 from spotify_tensorflow.luigi.tensorflow_task import TensorFlowTask
 from tests.test_utils import MockGCSTarget
 
@@ -97,44 +93,3 @@ class TensorflowTaskTest(TestCase):
         self.assertEquals(actual[:6], expected[:6])
         self.assertRegexpMatches(actual[6], expected[6])
         self.assertEquals(actual[7:], expected[7:])
-
-    def test_run_success(self):
-
-        tmp_dir_path = tempfile.mkdtemp()
-
-        class SuperDummyTask(DummyTask):
-
-            def _mk_cmd(self):
-                return ["echo", "hello"]
-
-            def requires(self):
-                return LocalTarget(tmp_dir_path)
-
-        task = SuperDummyTask(cloud=False,
-                              job_dir=tmp_dir_path,
-                              model_package_path="/path/to/package")
-        task.run()
-
-        assert os.path.exists(os.path.join(tmp_dir_path, "_SUCCESS"))
-
-    def test_run_fail(self):
-
-        tmp_dir_path = tempfile.mkdtemp()
-
-        class SuperDummyTask(DummyTask):
-
-            def _mk_cmd(self):
-                return ["cp", "some", "crap"]
-
-            def requires(self):
-                return LocalTarget(tmp_dir_path)
-
-        task = SuperDummyTask(cloud=False,
-                              job_dir=tmp_dir_path,
-                              model_package_path="/path/to/package")
-
-        try:
-            task.run()
-            assert False
-        except CalledProcessError:
-            assert not os.path.exists(os.path.join(tmp_dir_path, "_SUCCESS"))

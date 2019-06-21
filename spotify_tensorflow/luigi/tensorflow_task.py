@@ -23,9 +23,7 @@ import logging
 import uuid
 
 import luigi
-from luigi.contrib.gcs import GCSFlagTarget
-from luigi.local_target import LocalTarget
-from spotify_tensorflow.luigi.utils import is_gcs_path, get_uri, run_with_logging
+from spotify_tensorflow.luigi.utils import get_uri, run_with_logging
 
 logger = logging.getLogger("luigi-interface")
 
@@ -91,26 +89,11 @@ class TensorFlowTask(luigi.Task):
         cmd = self._mk_cmd()
         logger.info("Running:\n```\n%s\n```", cmd)
         run_with_logging(cmd, logger)
-        logger.info("Training successful. Marking as done.")
-        self._success_hook()
+        logger.info("Training finished.")
 
-    def output(self):
-        """
-        Generate Target dynamically based on `self.get_job_dir()`.
-        """
-        job_dir = str(self.get_job_dir())
-        return GCSFlagTarget(job_dir) if is_gcs_path(job_dir) else LocalTarget(job_dir)
-
-    # TODO(rav): look into luigi hooks
-    def _success_hook(self):
-        success_file = self.get_job_dir().rstrip("/") + "/_SUCCESS"
-        if is_gcs_path(self.get_job_dir()):
-            from luigi.contrib.gcs import GCSClient
-            client = GCSClient()
-            client.put_string("", success_file)
-        else:
-            # assume local filesystem otherwise
-            open(success_file, "a").close()
+    def get_job_dir(self):
+        """Get job directory used to store snapshots, logs, final output and any other artifacts."""
+        return self.job_dir
 
     def _mk_cmd(self):
         cmd = ["gcloud", "ai-platform"]
@@ -126,10 +109,6 @@ class TensorFlowTask(luigi.Task):
 
         cmd.extend(self._get_job_args())
         return cmd
-
-    def get_job_dir(self):
-        """Get job directory used to store snapshots, logs, final output and any other artifacts."""
-        return self.job_dir
 
     def _mk_cloud_params(self):
         params = []
