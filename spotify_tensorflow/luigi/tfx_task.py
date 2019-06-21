@@ -22,8 +22,14 @@ from luigi.contrib.beam_dataflow import BeamDataflowJobTask
 
 
 class TFXBaseTask(BeamDataflowJobTask):
+    python_script = None  # type: str
+
     def __init__(self, *args, **kwargs):
         super(TFXBaseTask, self).__init__(*args, **kwargs)
+
+    def dataflow_executable(self):
+        """ Must be overwritten from the BeamDataflowTask """
+        return ["python", self.python_script]
 
     def tfx_args(self):
         """ Extra arguments that will be passed to your tfx dataflow job.
@@ -45,7 +51,6 @@ class TFXBaseTask(BeamDataflowJobTask):
 
 class TFTransformTask(TFXBaseTask):
     # Required dataflow arg
-    python_script = None # type: str
 
     def __init__(self, *args, **kwargs):
         super(TFTransformTask, self).__init__(*args, **kwargs)
@@ -54,10 +59,6 @@ class TFTransformTask(TFXBaseTask):
         return [
             "--schema_file=%s" % self.get_schema_file()
         ]
-
-    def dataflow_executable(self):
-        """ Must be overwritten from the BeamDataflowTaski """
-        return ["python", self.python_script]
 
     @abstractmethod
     def get_schema_file(self):  # type: () -> str
