@@ -77,7 +77,7 @@ class TfDataValidator(object):
     def write_stats_and_schema(self, 
                                pipeline_args, 
                                infer_feature_shape=False
-                              ):
+                               ):
         # type: (List[str], bool) -> None
         stats = self.write_stats(pipeline_args)
         if not self.schema:
