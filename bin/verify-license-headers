@@ -63,7 +63,7 @@ stderr("")
 stderr("Checked {} python files".format(len(py_files)))
 if len(violations) > 0:
     stderr("Found violations in: {} file(s):".format(len(violations)))
-    for violation in violations:
+    for violation in sorted(violations):
         stdout(violation)
     sys.exit(1)
 else:
