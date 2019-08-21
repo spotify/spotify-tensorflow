@@ -4,6 +4,7 @@ oauth2client<4.0.0
 pandas>=0.22.0,<1.0.0
 six>=1.11.0,<2.0.0
 scikit-learn>=0.18,<0.21
-tensorflow==1.13.1
-tfx==0.13.0
+tensorflow>=1.14.0,<1.15
+tensorflow-data-validation>=0.14.1,<0.15
+tensorflow-transform>=0.14.0,<0.15
 typing>=3.6.4,<4.0.0
