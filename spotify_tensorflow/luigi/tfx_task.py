@@ -18,12 +18,18 @@
 
 from abc import abstractmethod
 
-from spotify_tensorflow.luigi.python_dataflow_task import PythonDataflowTask
+from luigi.contrib.beam_dataflow import BeamDataflowJobTask
 
 
-class TFXBaseTask(PythonDataflowTask):
+class TFXBaseTask(BeamDataflowJobTask):
+    python_script = None  # type: str
+
     def __init__(self, *args, **kwargs):
         super(TFXBaseTask, self).__init__(*args, **kwargs)
+
+    def dataflow_executable(self):
+        """ Must be overwritten from the BeamDataflowTask """
+        return ["python", self.python_script]
 
     def tfx_args(self):
         """ Extra arguments that will be passed to your tfx dataflow job.
@@ -44,6 +50,8 @@ class TFXBaseTask(PythonDataflowTask):
 
 
 class TFTransformTask(TFXBaseTask):
+    # Required dataflow arg
+
     def __init__(self, *args, **kwargs):
         super(TFTransformTask, self).__init__(*args, **kwargs)
 
