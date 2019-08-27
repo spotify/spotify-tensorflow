@@ -103,7 +103,7 @@ class PythonDataflowTask(MixinNaiveBulkComplete, luigi.Task):
             # job_name must consist of only the characters [-a-z0-9]
             cls_name = self.__class__.__name__.replace("_", "-").lower()
             self.job_name = "{cls_name}-{timestamp}".format(cls_name=cls_name,
-                                                            timestamp=str(time.time())[:-3])
+                                                            timestamp=str(int(time.time())))
 
     def on_successful_run(self):
         """ Callback that gets called right after the dataflow job has finished successfully but
