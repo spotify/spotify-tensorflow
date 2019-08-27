@@ -162,8 +162,11 @@ class TensorFlowTask(luigi.Task):
         return args
 
     def _get_job_name(self):
-        job_name = "%s_%s_%s" % (getpass.getuser(), self.__class__.__name__,
-                                 str(uuid.uuid4()).replace("-", "_"))
+        job_name = "%s_%s_%s_%s" % (
+            getpass.getuser(),
+            self.__class__.__name__,
+            self.model_name_suffix,
+            str(uuid.uuid4()).replace("-", "_"))
         return job_name
 
     def _get_input_args(self):
