@@ -151,7 +151,7 @@ def generate_statistics_from_tfrecord(pipeline_args,  # type: List[str]
 
     if all_options["job_name"] is None:
         gcloud_options = pipeline_options.view_as(GoogleCloudOptions)
-        gcloud_options.job_name = "generatestats-%s" % str(time.time())[:-3]
+        gcloud_options.job_name = "generatestats-%s" % str(int(time.time()))
 
     if all_options["setup_file"] is None:
         setup_file_path = create_setup_file()
