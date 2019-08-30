@@ -19,3 +19,4 @@ ChangeLog
 .mypy_cache
 tmp/
 .pytest_cache/
+.vscode/
