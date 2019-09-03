@@ -39,7 +39,7 @@ def assert_not_empty_string(arg):
 
 
 def create_setup_file():
-    lib_version = VersionInfo('spotify-tensorflow').version_string()
+    lib_version = VersionInfo("spotify_tensorflow").version_string()
     contents_for_setup_file = """
     import setuptools
     
