@@ -16,11 +16,11 @@
 # under the License.
 #
 import os
-from pbr.version import VersionInfo
 import tempfile
 import textwrap
 from typing import Any  # noqa: F401
 
+from pbr.version import VersionInfo
 from spotify_tensorflow.luigi.utils import to_snake_case
 
 
