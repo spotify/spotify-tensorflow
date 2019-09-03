@@ -36,7 +36,7 @@ logger = logging.getLogger("spotify-tensorflow")
 
 
 class TfDataValidator(object):
-    """Spotify-specific API for using Tensorflow Data Valiation in production.
+    """Spotify-specific API for using Tensorflow Data Validation in production.
 
     The typical usage is to create an instance of this class from a Luigi task that produces
     tfrecord files in order to produce statistics, a schema snapshot and any anomalies along with
@@ -54,6 +54,7 @@ class TfDataValidator(object):
                             None, a new schema will be inferred automatically from the statistics.
         :param data_location: input data dir containing tfrecord files
         :param binary_schema: specifies if the schema is in a binary format
+        :param stats_options: tfdv.StatsOptions for statistics generation settings
         """
         self.data_location = data_location
         self.schema = None
@@ -139,6 +140,7 @@ def generate_statistics_from_tfrecord(pipeline_args,  # type: List[str]
     :param pipeline_args: un-parsed Dataflow arguments
     :param data_location: input data dir containing tfrecord files
     :param output_path: output path for the stats file
+    :param stats_options: tfdv.StatsOptions for statistics generation settings
     :return a DatasetFeatureStatisticsList proto.
     """
     assert_not_empty_string(data_location)
