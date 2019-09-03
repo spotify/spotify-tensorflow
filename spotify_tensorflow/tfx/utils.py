@@ -16,6 +16,7 @@
 # under the License.
 #
 import os
+from pbr.version import VersionInfo
 import tempfile
 import textwrap
 from typing import Any  # noqa: F401
@@ -38,6 +39,7 @@ def assert_not_empty_string(arg):
 
 
 def create_setup_file():
+    lib_version = VersionInfo('spotify-tensorflow').version_string()
     contents_for_setup_file = """
     import setuptools
     
@@ -46,9 +48,9 @@ def create_setup_file():
             name="spotify_tensorflow_dataflow",
             packages=setuptools.find_packages(),
             install_requires=[
-                "spotify-tensorflow"
+                "spotify-tensorflow=={version}"
         ])
-    """  # noqa: W293
+    """.format(version=lib_version)  # noqa: W293
     setup_file_path = os.path.join(tempfile.mkdtemp(), "setup.py")
     with open(setup_file_path, "w") as f:
         f.writelines(textwrap.dedent(contents_for_setup_file))
