@@ -23,6 +23,18 @@ from spotify_tensorflow.tfx.utils import clean_up_pipeline_args
 
 class TFXUtilsTest(TestCase):
     def test_clean_up_pipeline_args(self):
-        pipeline_args = ["--project=1", "--tempLocation=gs://tmp", "--jobName", "test", "--extra=1"]
-        expected = ["--project=1", "--temp_location=gs://tmp", "--job_name=test"]
+        pipeline_args = [
+            "--project=1",
+            "--tempLocation=gs://tmp",
+            "--jobName",
+            "test",
+            "--extra=1",
+            "--requirements_file=requirements.txt"
+        ]
+        expected = [
+            "--project=1",
+            "--temp_location=gs://tmp",
+            "--job_name=test",
+            "--requirements_file=requirements.txt"
+        ]
         self.assertEqual(clean_up_pipeline_args(pipeline_args), expected)
