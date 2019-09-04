@@ -66,8 +66,8 @@ tox -e test
 To release:
 
 ```
-git commit --allow-empty -m "Release x.y.z"
-git tag x.y.z
+git commit --allow-empty -m "Release 0.7.2"
+git tag 0.7.2
 git push --tags  origin master
 ```
 
