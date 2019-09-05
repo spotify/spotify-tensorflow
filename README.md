@@ -5,7 +5,7 @@
 [![GitHub license](https://img.shields.io/github/license/spotify/spotify-tensorflow.svg)](./LICENSE)
 [![PyPI version](https://badge.fury.io/py/spotify_tensorflow.svg)](https://badge.fury.io/py/spotify_tensorflow)
 
-## Raison d'être:
+## Purpose:
 
 Provide Spotify specific TensorFlow helpers.
 
