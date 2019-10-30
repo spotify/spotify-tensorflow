@@ -5,7 +5,7 @@ pandas>=0.22.0,<1.0.0
 pbr
 six>=1.11.0,<2.0.0
 scikit-learn>=0.18,<0.21
-tensorflow>=1.14.0,<1.15
-tensorflow-data-validation>=0.14.1,<0.15
-tensorflow-transform>=0.14.0,<0.15
+tensorflow>=1.15.0,<1.16
+tensorflow-data-validation>=0.15.0,<0.16
+tensorflow-transform>=0.15.0,<0.16
 typing>=3.6.4,<4.0.0
