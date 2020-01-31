@@ -10,6 +10,6 @@ tensorflow-data-validation>=0.15.0,<0.16
 tensorflow-transform>=0.15.0,<0.16
 typing>=3.6.4,<4.0.0
 # tfx-bsl has requirement apache-beam[gcp]<2.17
-apache-beam>=2.16.0,<2.17.0
+apache-beam[gcp]>=2.16.0,<2.17.0
 # tfdv and tft 0.15 has requirement absl-py<0.9
 absl-py>=0.8.1,<0.9
