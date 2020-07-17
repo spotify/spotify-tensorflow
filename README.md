@@ -1,3 +1,8 @@
+MAINTENANCE MODE
+================
+
+THIS PROJECT IS IN MAINTENANCE MODE DUE TO THE FACT THAT IT'S NOT WIDELY USED WITHIN SPOTIFY. WE'LL PROVIDE BEST EFFORT SUPPORT FOR ISSUES AND PULL REQUESTS BUT DO EXPECT DELAY IN RESPONSES.
+
 # spotify-tensorflow
 
 [![Build Status](https://img.shields.io/circleci/project/github/spotify/spotify-tensorflow/master.svg)](https://circleci.com/gh/spotify/spotify-tensorflow)
