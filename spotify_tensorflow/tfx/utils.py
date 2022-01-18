@@ -93,5 +93,6 @@ SUPPORTED_DATAFLOW_PIPELINE_ARGS = {
     "--worker_disk_type",
     "--service_account_email",
     "--requirements_file",
-    "--setup_file"
+    "--setup_file",
+    "--experiments",
 }
