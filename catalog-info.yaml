@@ -1,0 +1,8 @@
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: spotify-tensorflow
+  description: Provide Spotify specific TensorFlow helpers.
+spec:
+  type: resource
+  owner: hyperkube
