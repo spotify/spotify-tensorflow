@@ -6,7 +6,7 @@ pbr
 six>=1.11.0,<2.0.0
 scikit-learn>=0.18,<0.21
 tensorflow>=1.15.0,<1.16
-tensorflow-data-validation>=0.15.0,<0.16
+tensorflow-data-validation==0.27.0
 tensorflow-transform>=0.15.0,<0.16
 typing>=3.6.4,<4.0.0
 # tfx-bsl has requirement apache-beam[gcp]<2.17
